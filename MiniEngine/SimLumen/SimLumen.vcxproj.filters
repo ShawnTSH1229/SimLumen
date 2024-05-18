@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{06dcf987-d5c3-489b-aa0a-88d547a323d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Embree">
+      <UniqueIdentifier>{23017915-9098-451e-a84c-f2bebfd848f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MeshBuilder">
+      <UniqueIdentifier>{5a51e7d0-ce0c-40ce-9d9e-3ec63568eaa4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Runtime">
+      <UniqueIdentifier>{37ff0cfd-f2e2-479a-9340-578f2965f063}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common">
+      <UniqueIdentifier>{1a99a93b-5d18-410e-92bb-1549ea35e2d6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="SimLumenMeshBuilder\SimLumenObjLoader.cpp">
+      <Filter>Source Files\MeshBuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenMeshBuilder\SimLumenMeshBuilder.cpp">
+      <Filter>Source Files\MeshBuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenMeshInstance.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\Shadow.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenCardCapture.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenRuntimeCommon.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenRender.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenCommon\MeshResource.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenCommon\ShaderCompile.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenCommon\SimLumenCommon.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="embree\include\embree4\rtcore.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_buffer.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_builder.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_common.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_config.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_device.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_geometry.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_quaternion.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_ray.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="embree\include\embree4\rtcore_scene.h">
+      <Filter>Source Files\Embree</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenMeshBuilder\SimLumenObjLoader.h">
+      <Filter>Source Files\MeshBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenMeshBuilder\tiny_obj_loader.h">
+      <Filter>Source Files\MeshBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenMeshBuilder\SimLumenMeshBuilder.h">
+      <Filter>Source Files\MeshBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenMeshInstance.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\Shadow.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenCardCapture.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenRuntimeCommon.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenRender.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenCommon\MeshResource.h">
+      <Filter>Source Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenCommon\ShaderCompile.h">
+      <Filter>Source Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenCommon\SimLumenCommon.h">
+      <Filter>Source Files\Common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Logo.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Logo44.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="SmallLogo.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="SplashScreen.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="StoreLogo.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="WideLogo.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="embree\include\embree4\rtcore.isph">
+      <Filter>Source Files\Embree</Filter>
+    </None>
+    <None Include="embree\include\embree4\rtcore_buffer.isph">
+      <Filter>Source Files\Embree</Filter>
+    </None>
+    <None Include="embree\include\embree4\rtcore_common.isph">
+      <Filter>Source Files\Embree</Filter>
+    </None>
+    <None Include="embree\include\embree4\rtcore_device.isph">
+      <Filter>Source Files\Embree</Filter>
+    </None>
+    <None Include="embree\include\embree4\rtcore_geometry.isph">
+      <Filter>Source Files\Embree</Filter>
+    </None>
+    <None Include="embree\include\embree4\rtcore_quaternion.isph">
+      <Filter>Source Files\Embree</Filter>
+    </None>
+    <None Include="embree\include\embree4\rtcore_ray.isph">
+      <Filter>Source Files\Embree</Filter>
+    </None>
+    <None Include="embree\include\embree4\rtcore_scene.isph">
+      <Filter>Source Files\Embree</Filter>
+    </None>
+  </ItemGroup>
+</Project>
