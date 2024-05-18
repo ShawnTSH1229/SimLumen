@@ -2,7 +2,7 @@
 Simplified Unreal Lumen Implementation in MiniEngine
 
 <p align="center">
-    <img src="/Resource/logo.png" width="60%" height="60%">
+    <img src="/Resources/logo.png" width="60%" height="60%">
 </p>
 
 # Getting Started
