@@ -15,6 +15,8 @@
 #include "SimLumenRuntime/SimLumenMeshInstance.h"
 #include "SimLumenRuntime/SimLumenCardCapture.h"
 #include "SimLumenRuntime/SimLumenRender.h"
+#include "SimLumenRuntime/SimLumenGlobalResource.h"
+#include "SimLumenRuntime/SimLumenVisualization.h"
 
 using namespace GameCore;
 using namespace Graphics;
@@ -38,16 +40,16 @@ private:
     Camera m_Camera;
     std::unique_ptr<CameraController> m_CameraController;
 
-    DescriptorHeap s_TextureHeap;
-    DescriptorHeap s_SamplerHeap;
+
 
     RootSignature m_BasePassRootSig;
-    CShaderCompiler m_ShaderCompiler;
+   
     GraphicsPSO m_BasePassPSO;
 
     CSimLumenMeshBuilder m_MeshBuilder;
     CSimLuCardCapturer m_card_capturer;
-    std::vector<SLumenMeshInstance> mesh_instances;
+    CSimLumenVisualization m_lumen_visualizer;
+    
 };
 
 CREATE_APPLICATION( SimLumen )
@@ -62,10 +64,10 @@ void SimLumen::Startup( void )
     PostEffects::EnableAdaptation = false;
     SSAO::Enable = false;
 
-    s_TextureHeap.Create(L"Scene Texture Descriptors", D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4096);
-    s_SamplerHeap.Create(L"Scene Sampler Descriptors", D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 2048);
+    GetGlobalResource().s_TextureHeap.Create(L"Scene Texture Descriptors", D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4096);
+    GetGlobalResource().s_SamplerHeap.Create(L"Scene Sampler Descriptors", D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 2048);
 
-    m_ShaderCompiler.Init();
+    GetGlobalResource().m_shader_compiler.Init();
 
     {
 
@@ -89,8 +91,8 @@ void SimLumen::Startup( void )
 
     // PSO
     {
-        std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = m_ShaderCompiler.Compile(L"Shaders/BasePass.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
-        std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = m_ShaderCompiler.Compile(L"Shaders/BasePass.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
+        std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/BasePass.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
+        std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/BasePass.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
 
         m_BasePassPSO = GraphicsPSO(L"BasePass PSO");
         m_BasePassPSO.SetRootSignature(m_BasePassRootSig);
@@ -105,12 +107,13 @@ void SimLumen::Startup( void )
         m_BasePassPSO.Finalize();
     }
 
-    CreateDemoScene(mesh_instances, s_TextureHeap, s_SamplerHeap);
+    std::vector<SLumenMeshInstance>& scene_mesh = GetGlobalResource().m_mesh_instances;
+    CreateDemoScene(scene_mesh, GetGlobalResource().s_TextureHeap, GetGlobalResource().s_SamplerHeap);
 
     m_MeshBuilder.Init();
-    for (int mesh_idx = 0; mesh_idx < mesh_instances.size(); mesh_idx++)
+    for (int mesh_idx = 0; mesh_idx < scene_mesh.size(); mesh_idx++)
     {
-        m_MeshBuilder.BuildMesh(mesh_instances[mesh_idx].m_mesh_resource);
+        m_MeshBuilder.BuildMesh(scene_mesh[mesh_idx].m_mesh_resource);
     }
     m_MeshBuilder.Destroy();
 
@@ -119,10 +122,13 @@ void SimLumen::Startup( void )
     m_CameraController.reset(new FlyingFPSCamera(m_Camera, Vector3(kYUnitVector)));
 
     SCardCaptureInitDesc card_capturer_init_desc;
-    card_capturer_init_desc.m_shader_compiler = &m_ShaderCompiler;
+    card_capturer_init_desc.m_shader_compiler = &GetGlobalResource().m_shader_compiler;
     m_card_capturer.Init(card_capturer_init_desc);
 
+    InitGlobalResource();
+
     GetGlobalRender()->Init();
+    m_lumen_visualizer.Init();
 }
 
 namespace Graphics
@@ -149,17 +155,39 @@ void SimLumen::Update( float deltaT )
 
 void SimLumen::RenderScene( void )
 {
-    m_card_capturer.UpdateSceneCards(mesh_instances, &s_TextureHeap);
+    {
+        GraphicsContext& gfxContext = GraphicsContext::Begin(L"update view constant buffer");
+        
+        SLumenViewGlobalConstant globals;
+        globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
+        globals.CameraPos = m_Camera.GetPosition();
+        globals.SunDirection = GetLumenConfig().m_LightDirection;
+        globals.SunIntensity = Math::Vector3(1, 1, 1);
+        DynAlloc cb = gfxContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
+        memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
+        GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
+
+        SMeshSdfBrickTextureInfo global_sdf_info;
+        global_sdf_info.texture_brick_num_x = SDF_BRICK_NUM_XY;
+        global_sdf_info.texture_brick_num_y = SDF_BRICK_NUM_XY;
+
+        global_sdf_info.texture_size_x = SDF_BRICK_TEX_SIZE;
+        global_sdf_info.texture_size_y = SDF_BRICK_TEX_SIZE;
+        global_sdf_info.texture_size_z = g_brick_size;
+
+        global_sdf_info.scene_mesh_sdf_num = GetGlobalResource().m_mesh_instances.size();
+        DynAlloc gloabl_sdf = gfxContext.ReserveUploadMemory(sizeof(SMeshSdfBrickTextureInfo));
+        memcpy(gloabl_sdf.DataPtr, &global_sdf_info, sizeof(SMeshSdfBrickTextureInfo));
+        GetGlobalResource().m_mesh_sdf_brick_tex_info = gloabl_sdf.GpuAddress;
+
+        gfxContext.Finish();
+    }
+
+    m_card_capturer.UpdateSceneCards(GetGlobalResource().m_mesh_instances, &GetGlobalResource().s_TextureHeap);
 
     GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
 
-    SLumenViewGlobalConstant globals;
-    globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
-    globals.CameraPos = m_Camera.GetPosition();
-    globals.SunDirection = GetLumenConfig().m_LightDirection;
-    globals.SunIntensity = Math::Vector3(1, 1, 1);
-    DynAlloc cb = gfxContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
-    memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
+
 
     gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
     gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
@@ -171,23 +199,23 @@ void SimLumen::RenderScene( void )
 
     gfxContext.SetRootSignature(m_BasePassRootSig);
     gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, s_TextureHeap.GetHeapPointer());
-    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, s_SamplerHeap.GetHeapPointer());
+    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
+    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
     gfxContext.SetPipelineState(m_BasePassPSO);
-    gfxContext.SetConstantBuffer(1, cb.GpuAddress);
+    gfxContext.SetConstantBuffer(1, GetGlobalResource().m_global_view_constant_buffer);
     gfxContext.FlushResourceBarriers();
 
-    for (int mesh_idx = 0; mesh_idx < mesh_instances.size(); mesh_idx++)
+    for (int mesh_idx = 0; mesh_idx < GetGlobalResource().m_mesh_instances.size(); mesh_idx++)
     {
-        SLumenMeshInstance& lumen_mesh_instance = mesh_instances[mesh_idx];
+        SLumenMeshInstance& lumen_mesh_instance = GetGlobalResource().m_mesh_instances[mesh_idx];
 
         DynAlloc mesh_consatnt = gfxContext.ReserveUploadMemory(sizeof(SLumenMeshConstant));
         memcpy(mesh_consatnt.DataPtr, &lumen_mesh_instance.m_LumenConstant, sizeof(SLumenMeshConstant));
 
         gfxContext.SetConstantBuffer(0, mesh_consatnt.GpuAddress);
         
-        gfxContext.SetDescriptorTable(2, s_TextureHeap[lumen_mesh_instance.m_tex_table_idx]);
-        gfxContext.SetDescriptorTable(3, s_SamplerHeap[lumen_mesh_instance.m_sampler_table_idx]);
+        gfxContext.SetDescriptorTable(2, GetGlobalResource().s_TextureHeap[lumen_mesh_instance.m_tex_table_idx]);
+        gfxContext.SetDescriptorTable(3, GetGlobalResource().s_SamplerHeap[lumen_mesh_instance.m_sampler_table_idx]);
 
         gfxContext.SetVertexBuffer(0, lumen_mesh_instance.m_vertex_pos_buffer.VertexBufferView());
         gfxContext.SetVertexBuffer(1, lumen_mesh_instance.m_vertex_norm_buffer.VertexBufferView());
@@ -197,7 +225,7 @@ void SimLumen::RenderScene( void )
         gfxContext.DrawIndexed(lumen_mesh_instance.m_mesh_resource.m_indices.size());
     }
 
-    // Rendering something
-
     gfxContext.Finish();
+
+    m_lumen_visualizer.Render();
 }

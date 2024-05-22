@@ -234,6 +234,8 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 		mesh_instance.m_LumenConstant.WorldMatrix = mesh_resource.m_local_to_world;
 		mesh_instance.m_LumenConstant.WorldIT = InverseTranspose(mesh_instance.m_LumenConstant.WorldMatrix.Get3x3());
 		mesh_instance.m_LumenConstant.ColorMulti = DirectX::XMFLOAT4(1.0, 1.0, 1.0, 1);
+
+		mesh_resource.LoadFrom(std::wstring(L"Assets/erato.obj"));
 	}
 
 

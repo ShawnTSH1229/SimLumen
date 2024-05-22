@@ -51,7 +51,7 @@ namespace Renderer
     // All of the information that needs to be written to a .mini data file
     struct ModelData
     {
-        BoundingSphere m_BoundingSphere;
+        Math::BoundingSphere m_BoundingSphere;
         AxisAlignedBox m_BoundingBox;
         std::vector<byte> m_GeometryData;
         std::vector<byte> m_AnimationKeyFrameData;

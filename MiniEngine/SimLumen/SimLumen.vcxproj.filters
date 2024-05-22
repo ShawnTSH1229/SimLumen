@@ -60,6 +60,15 @@
     <ClCompile Include="SimLumenCommon\SimLumenCommon.cpp">
       <Filter>Source Files\Common</Filter>
     </ClCompile>
+    <ClCompile Include="SimLumenMeshBuilder\SimLumenMeshSDFBuilder.cpp">
+      <Filter>Source Files\MeshBuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenGlobalResource.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenVisualization.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -125,6 +134,12 @@
     </ClInclude>
     <ClInclude Include="SimLumenCommon\SimLumenCommon.h">
       <Filter>Source Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenGlobalResource.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenVisualization.h">
+      <Filter>Source Files\Runtime</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

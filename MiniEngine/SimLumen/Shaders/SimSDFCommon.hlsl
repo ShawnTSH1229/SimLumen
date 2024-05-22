@@ -2,11 +2,13 @@
 
 cbuffer CMeshSdfBrickTextureInfo : register(b0)
 {
+    // scene sdf infomation
     uint2 texture_brick_num_xy;
     uint3 texture_size_xyz;
     uint scene_mesh_sdf_num;
+    
+    // global sdf infomation
     float gloabl_sdf_voxel_size;
-
     float3 gloabl_sdf_center;
     float3 global_sdf_extents;
 };
