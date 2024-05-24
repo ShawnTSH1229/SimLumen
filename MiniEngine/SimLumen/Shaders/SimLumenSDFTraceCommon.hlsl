@@ -75,12 +75,12 @@ void RayTraceSingleMeshSDF(float3 world_ray_start,float3 world_ray_direction,flo
         bool bhit = false;
         uint step_idx = 0;
 
-        [unroll]
+        [loop]
         for( ; step_idx < max_step; step_idx++)
         {
             float3 sample_volume_position = volume_ray_start + volume_ray_direction * sample_ray_t;
             float distance_filed = SampleDistanceFieldBrickTexture(sample_volume_position, mesh_sdf_info);
-            float min_hit_distance = mesh_sdf_info.volume_brick_size * 0.125 * 2.0; // 2 voxel , use 1.5 volxel ?
+            float min_hit_distance = mesh_sdf_info.volume_brick_size * 0.125 * 1.0; // 1 voxel
 
             if(distance_filed < min_hit_distance)
             {
@@ -120,10 +120,10 @@ float3 CalculateMeshSDFGradient(float3 sample_volume_position, SMeshSDFInfo mesh
     float L = SampleDistanceFieldBrickTexture(float3(sample_volume_position.x - voxel_offset, sample_volume_position.y, sample_volume_position.z),mesh_sdf_info);
 
     float F = SampleDistanceFieldBrickTexture(float3(sample_volume_position.x, sample_volume_position.y + voxel_offset, sample_volume_position.z),mesh_sdf_info);
-    float B = SampleDistanceFieldBrickTexture(float3(sample_volume_position.x, sample_volume_position.y + voxel_offset, sample_volume_position.z),mesh_sdf_info);
+    float B = SampleDistanceFieldBrickTexture(float3(sample_volume_position.x, sample_volume_position.y - voxel_offset, sample_volume_position.z),mesh_sdf_info);
 
     float U = SampleDistanceFieldBrickTexture(float3(sample_volume_position.x, sample_volume_position.y, sample_volume_position.z + voxel_offset),mesh_sdf_info);
-    float D = SampleDistanceFieldBrickTexture(float3(sample_volume_position.x, sample_volume_position.y, sample_volume_position.z + voxel_offset),mesh_sdf_info);
+    float D = SampleDistanceFieldBrickTexture(float3(sample_volume_position.x, sample_volume_position.y, sample_volume_position.z - voxel_offset),mesh_sdf_info);
 
     float3 gradiance = float3(R - L, F - B, U - D);
 	return gradiance;

@@ -1,12 +1,28 @@
 #ifndef SIMLUMEN_COMMON
 #define SIMLUMEN_COMMON
 
+#define GLOBAL_SDF_SIZE_X 96
+#define GLOBAL_SDF_SIZE_Y 96
+#define GLOBAL_SDF_SIZE_Z 320
+
+#define SCENE_VOXEL_SIZE_X 48
+#define SCENE_VOXEL_SIZE_Y 48
+#define SCENE_VOXEL_SIZE_Z 160
+
+#define SCENE_SDF_NUM 13
+
 struct STraceResult
 {
     bool is_hit;
     float hit_distance;
     uint hit_mesh_index;
     uint hit_mesh_sdf_card_index;
+};
+
+struct SGloablSDFHitResult
+{
+    bool bHit;
+    float hit_distance;
 };
 
 struct SMeshSDFInfo

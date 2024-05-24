@@ -110,6 +110,15 @@ void SimLumen::Startup( void )
     std::vector<SLumenMeshInstance>& scene_mesh = GetGlobalResource().m_mesh_instances;
     CreateDemoScene(scene_mesh, GetGlobalResource().s_TextureHeap, GetGlobalResource().s_SamplerHeap);
 
+    std::vector<CSimLumenMeshResouce*> meshs;
+    meshs.resize(scene_mesh.size());
+    for (int mesh_idx = 0; mesh_idx < scene_mesh.size(); mesh_idx++)
+    {
+        meshs[mesh_idx] = &scene_mesh[mesh_idx].m_mesh_resource;
+    }
+    BuildGlobalSDFData(meshs, GetGlobalResource().global_sdf_data, false);
+
+
     m_MeshBuilder.Init();
     for (int mesh_idx = 0; mesh_idx < scene_mesh.size(); mesh_idx++)
     {
@@ -117,7 +126,7 @@ void SimLumen::Startup( void )
     }
     m_MeshBuilder.Destroy();
 
-    m_Camera.SetEyeAtUp(Vector3(0, 5, 5), Vector3(kZero), Vector3(kYUnitVector));
+    m_Camera.SetEyeAtUp(Vector3(0, 50, 50), Vector3(kZero), Vector3(kYUnitVector));
     m_Camera.SetZRange(1.0f, 10000.0f);
     m_CameraController.reset(new FlyingFPSCamera(m_Camera, Vector3(kYUnitVector)));
 
@@ -151,39 +160,50 @@ void SimLumen::Update( float deltaT )
         DebugZoom.Increment();
 
     m_CameraController->Update(deltaT);
+
+    if (GameInput::IsFirstPressed(GameInput::kKey_1)) { GetGlobalResource().m_visualize_type = 1; };
+    if (GameInput::IsFirstPressed(GameInput::kKey_2)) { GetGlobalResource().m_visualize_type = 2; };
 }
 
 void SimLumen::RenderScene( void )
 {
-    {
-        GraphicsContext& gfxContext = GraphicsContext::Begin(L"update view constant buffer");
-        
-        SLumenViewGlobalConstant globals;
-        globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
-        globals.CameraPos = m_Camera.GetPosition();
-        globals.SunDirection = GetLumenConfig().m_LightDirection;
-        globals.SunIntensity = Math::Vector3(1, 1, 1);
-        DynAlloc cb = gfxContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
-        memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
-        GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
+    GraphicsContext& cbUpdateContext = GraphicsContext::Begin(L"update view constant buffer");
 
-        SMeshSdfBrickTextureInfo global_sdf_info;
-        global_sdf_info.texture_brick_num_x = SDF_BRICK_NUM_XY;
-        global_sdf_info.texture_brick_num_y = SDF_BRICK_NUM_XY;
+    SLumenViewGlobalConstant globals;
+    globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
+    globals.CameraPos = m_Camera.GetPosition();
+    globals.SunDirection = GetLumenConfig().m_LightDirection;
+    globals.SunIntensity = Math::Vector3(1, 1, 1);
+    DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
+    memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
+    GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
 
-        global_sdf_info.texture_size_x = SDF_BRICK_TEX_SIZE;
-        global_sdf_info.texture_size_y = SDF_BRICK_TEX_SIZE;
-        global_sdf_info.texture_size_z = g_brick_size;
+    SMeshSdfBrickTextureInfo global_sdf_info;
+    global_sdf_info.texture_brick_num_x = SDF_BRICK_NUM_XY;
+    global_sdf_info.texture_brick_num_y = SDF_BRICK_NUM_XY;
 
-        global_sdf_info.scene_mesh_sdf_num = GetGlobalResource().m_mesh_instances.size();
-        DynAlloc gloabl_sdf = gfxContext.ReserveUploadMemory(sizeof(SMeshSdfBrickTextureInfo));
-        memcpy(gloabl_sdf.DataPtr, &global_sdf_info, sizeof(SMeshSdfBrickTextureInfo));
-        GetGlobalResource().m_mesh_sdf_brick_tex_info = gloabl_sdf.GpuAddress;
+    global_sdf_info.texture_size_x = SDF_BRICK_TEX_SIZE;
+    global_sdf_info.texture_size_y = SDF_BRICK_TEX_SIZE;
+    global_sdf_info.texture_size_z = g_brick_size;
 
-        gfxContext.Finish();
-    }
+    global_sdf_info.scene_mesh_sdf_num = GetGlobalResource().m_mesh_instances.size();
 
-    m_card_capturer.UpdateSceneCards(GetGlobalResource().m_mesh_instances, &GetGlobalResource().s_TextureHeap);
+    global_sdf_info.gloabl_sdf_voxel_size = gloabl_sdf_voxel_size;
+    global_sdf_info.gloabl_sdf_center = gloabl_sdf_center;
+
+    global_sdf_info.global_sdf_extents = gloabl_sdf_extent;
+    global_sdf_info.global_sdf_scale_x = gloabl_sdf_scale_x;
+
+    global_sdf_info.global_sdf_tex_size_xyz = DirectX::XMFLOAT3(global_sdf_size_x, global_sdf_size_y, global_sdf_size_z);
+    global_sdf_info.global_sdf_scale_y = gloabl_sdf_scale_y;
+
+    DynAlloc gloabl_sdf = cbUpdateContext.ReserveUploadMemory(sizeof(SMeshSdfBrickTextureInfo));
+    memcpy(gloabl_sdf.DataPtr, &global_sdf_info, sizeof(SMeshSdfBrickTextureInfo));
+    GetGlobalResource().m_mesh_sdf_brick_tex_info = gloabl_sdf.GpuAddress;
+
+    cbUpdateContext.Finish();
+
+    //m_card_capturer.UpdateSceneCards(GetGlobalResource().m_mesh_instances, &GetGlobalResource().s_TextureHeap);
 
     GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
 

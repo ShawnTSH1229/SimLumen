@@ -185,13 +185,13 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 			out_mesh_instances[current_mesh_idx++],
 			5, 64, 100,
 			-30, 32, -50,
-			1, 0.2, 0.2);
+			1, 0.8, 0.8);
 
 		CreateBoxMeshResource(
 			out_mesh_instances[current_mesh_idx++],
 			5, 64, 100,
 			-30, 32, -50 - 10 - 120,
-			1.0, 1.0, 0.2);
+			1.0, 1.0, 0.8);
 	}
 
 	{
@@ -235,7 +235,7 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 		mesh_instance.m_LumenConstant.WorldIT = InverseTranspose(mesh_instance.m_LumenConstant.WorldMatrix.Get3x3());
 		mesh_instance.m_LumenConstant.ColorMulti = DirectX::XMFLOAT4(1.0, 1.0, 1.0, 1);
 
-		mesh_resource.LoadFrom(std::wstring(L"Assets/erato.obj"));
+		mesh_resource.LoadFrom(std::wstring(L"Assets/erato.obj"), false);
 	}
 
 
@@ -246,13 +246,13 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 			out_mesh_instances[current_mesh_idx++],
 			5, 64, 120,
 			30, 32, -60,
-			0.2, 1.0, 0.2);
+			0.8, 1.0, 0.8);
 
 		CreateBoxMeshResource(
 			out_mesh_instances[current_mesh_idx++],
 			5, 64, 120,
 			30, 32, -60 - 120,
-			0.2, 0.2, 1.0);
+			0.8, 0.8, 1.0);
 	}
 
 	{

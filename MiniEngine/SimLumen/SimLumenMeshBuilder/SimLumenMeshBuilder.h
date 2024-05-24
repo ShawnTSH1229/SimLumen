@@ -19,3 +19,6 @@ private:
 	RTCDevice m_rt_device;
 	RTCScene m_rt_scene;
 };
+
+void BuildGlobalSDFData(std::vector<CSimLumenMeshResouce*> meshs, std::vector<uint8_t>& global_sdf_data, bool bforce_rebuild = false);
+

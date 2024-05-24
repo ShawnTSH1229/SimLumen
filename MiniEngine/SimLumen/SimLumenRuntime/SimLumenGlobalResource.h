@@ -32,6 +32,7 @@ static_assert(sizeof(SMeshSDFInfo) == sizeof(float) * (16 + 16 + 3 + 3 + 3 + 7),
 
 __declspec(align(256)) struct SMeshSdfBrickTextureInfo
 {
+	// scene sdf infomation
 	uint32_t texture_brick_num_x;
 	uint32_t texture_brick_num_y;
 
@@ -44,13 +45,21 @@ __declspec(align(256)) struct SMeshSdfBrickTextureInfo
 
 	uint32_t scene_mesh_sdf_num;
 
+	//global infomation
+	float gloabl_sdf_voxel_size;
+	DirectX::XMFLOAT3 gloabl_sdf_center;
 
-	float padding2;
+	DirectX::XMFLOAT3 global_sdf_extents;
+	float global_sdf_scale_x;
+
+	DirectX::XMFLOAT3 global_sdf_tex_size_xyz;
+	float global_sdf_scale_y;
 };
 struct SSimLumenGlobalResource
 {
 	std::vector<SLumenMeshInstance> m_mesh_instances;
-	
+	std::vector<uint8_t> global_sdf_data;
+
 	CShaderCompiler m_shader_compiler;
 
 	std::vector<SMeshSDFInfo> m_mesh_sdf_infos;
@@ -58,13 +67,21 @@ struct SSimLumenGlobalResource
 
 	TextureRef m_scene_mesh_sdf_brick_texture;
 	uint32_t m_mesh_sdf_brick_tex_table_idx;
-	uint32_t m_mesh_sdf_brick_tex__sampler_table_idx;
+	uint32_t m_mesh_sdf_brick_tex_sampler_table_idx;
+
+	TextureRef m_global_sdf_brick_texture;
+	uint32_t m_global_sdf_brick_tex_table_idx;
+	uint32_t m_global_sdf_brick_tex_sampler_table_idx;
 
 	D3D12_GPU_VIRTUAL_ADDRESS m_global_view_constant_buffer;
 	D3D12_GPU_VIRTUAL_ADDRESS m_mesh_sdf_brick_tex_info;
 
 	DescriptorHeap s_TextureHeap;
 	DescriptorHeap s_SamplerHeap;
+
+	// 1: visualize mesh sdf normal
+	// 2: visualize global sdf normal
+	int m_visualize_type;
 };
 
 SSimLumenGlobalResource& GetGlobalResource();

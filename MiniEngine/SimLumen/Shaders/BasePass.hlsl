@@ -160,5 +160,7 @@ float4 ps_main(VSOutput vsOutput) : SV_Target0
     float3 colorAccum = float3(0,0,0);
     colorAccum += ShadeDirectionalLight(Surface, SunDirection, SunIntensity);
     
+    colorAccum += (Surface.c_diff * 0.03);
+
     return float4(colorAccum, 1.0);
 }

@@ -86,15 +86,6 @@ static void InitMeshSDFs()
 	}
 	gSimLumenGlobalResource.m_scene_sdf_infos_gpu.Create(L"m_scene_sdf_infos_gpu", gSimLumenGlobalResource.m_mesh_sdf_infos.size(),sizeof(SMeshSDFInfo), gSimLumenGlobalResource.m_mesh_sdf_infos.data());
 
-	//TexMetadata sdf_brick_tex_info;
-	//sdf_brick_tex_info.width = 1024;
-	//sdf_brick_tex_info.height = 1024;
-	//sdf_brick_tex_info.depth = 6;
-	//sdf_brick_tex_info.arraySize = 1;
-	//sdf_brick_tex_info.mipLevels = 1;
-	//sdf_brick_tex_info.format = DXGI_FORMAT_R8_UNORM;
-	//sdf_brick_tex_info.dimension = TEX_DIMENSION_TEXTURE3D;
-
 	Image images[g_brick_size];
 	for (int slice_idx = 0; slice_idx < g_brick_size; slice_idx++)
 	{
@@ -133,7 +124,7 @@ static void InitMeshSDFs()
 	//sampler
 	{
 		DescriptorHandle SamplerHandles = GetGlobalResource().s_SamplerHeap.Alloc(1);
-		gSimLumenGlobalResource.m_mesh_sdf_brick_tex__sampler_table_idx = GetGlobalResource().s_SamplerHeap.GetOffsetOfHandle(SamplerHandles);
+		gSimLumenGlobalResource.m_mesh_sdf_brick_tex_sampler_table_idx = GetGlobalResource().s_SamplerHeap.GetOffsetOfHandle(SamplerHandles);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE SourceSamplers[1] = { SamplerPointClamp };
 
@@ -142,7 +133,57 @@ static void InitMeshSDFs()
 
 }
 
+void InitGlobalSDF()
+{
+	Image images[global_sdf_size_z];
+	for (int slice_idx = 0; slice_idx < global_sdf_size_z; slice_idx++)
+	{
+		images[slice_idx].width = global_sdf_size_x;
+		images[slice_idx].height = global_sdf_size_y;
+		images[slice_idx].format = DXGI_FORMAT_R8_UNORM;
+		images[slice_idx].rowPitch = global_sdf_size_x;
+		images[slice_idx].slicePitch = global_sdf_size_x * global_sdf_size_y;
+		images[slice_idx].pixels = gSimLumenGlobalResource.global_sdf_data.data() + slice_idx * global_sdf_size_x * global_sdf_size_y;
+	}
+
+	const std::wstring global_sdf_file = L"Assets/global_sdf_tex.dds";
+
+	std::unique_ptr<ScratchImage> image(new ScratchImage);
+	image->Initialize3DFromImages(images, global_sdf_size_z);
+	HRESULT hr = SaveToDDSFile(image->GetImages(), image->GetImageCount(), image->GetMetadata(), DDS_FLAGS_NONE, global_sdf_file.c_str());
+
+	if (FAILED(hr))
+	{
+		Utility::Printf("Write file false.\n");
+	}
+
+	uint32_t DestCount = 1;
+	uint32_t SourceCount = 1;
+
+	{
+		gSimLumenGlobalResource.m_global_sdf_brick_texture = TextureManager::LoadDDSFromFile(global_sdf_file);
+		DescriptorHandle texture_handles = GetGlobalResource().s_TextureHeap.Alloc(1);
+		gSimLumenGlobalResource.m_global_sdf_brick_tex_table_idx = GetGlobalResource().s_TextureHeap.GetOffsetOfHandle(texture_handles);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE SourceTextures[1];
+		SourceTextures[0] = gSimLumenGlobalResource.m_global_sdf_brick_texture.GetSRV();
+
+		g_Device->CopyDescriptors(1, &texture_handles, &DestCount, DestCount, SourceTextures, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+
+	//sampler
+	{
+		DescriptorHandle SamplerHandles = GetGlobalResource().s_SamplerHeap.Alloc(1);
+		gSimLumenGlobalResource.m_global_sdf_brick_tex_sampler_table_idx = GetGlobalResource().s_SamplerHeap.GetOffsetOfHandle(SamplerHandles);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE SourceSamplers[1] = { SamplerPointClamp };
+
+		g_Device->CopyDescriptors(1, &SamplerHandles, &DestCount, DestCount, SourceSamplers, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	}
+}
+
 void InitGlobalResource()
 {
 	InitMeshSDFs();
+	InitGlobalSDF();
 }

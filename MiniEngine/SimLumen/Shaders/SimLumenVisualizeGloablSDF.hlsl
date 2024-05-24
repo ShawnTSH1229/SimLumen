@@ -42,10 +42,9 @@ cbuffer CMeshSdfBrickTextureInfo : register(b1)
     float global_sdf_scale_y;
 };
 
+
 StructuredBuffer<float4x4> instance_buffer : register(t0);
 StructuredBuffer<SMeshSDFInfo> scene_sdf_infos : register(t1);
-Texture3D<float> distance_field_brick_tex: register(t2);
-SamplerState g_sampler_point_3d : register(s0);
 
 VSOutput vs_main(VSInput vsInput, uint instanceID : SV_InstanceID)
 {
@@ -60,55 +59,47 @@ VSOutput vs_main(VSInput vsInput, uint instanceID : SV_InstanceID)
     return vsOutput;
 }
 
-#include "SimLumenSDFTraceCommon.hlsl"
+Texture3D<float> global_sdf_texture: register(t2);
+SamplerState g_global_sdf_sampler : register(s0);
+#include "SimLumenGlobalSDFTraceCommon.hlsl"
 
 float4 ps_main(VSOutput vsOutput) : SV_Target0
 {
     float3 world_position = vsOutput.world_position;
     float3 ray_direction = normalize(vsOutput.cube_direction);
 
-    STraceResult trace_result = (STraceResult)0;
-    trace_result.hit_distance = 1000.0f;
+    float3 visualize_color = float3(0.1,0.1,0.1);
+    SGloablSDFHitResult hit_result = (SGloablSDFHitResult)0;
+    TraceGlobalSDF(world_position, ray_direction, hit_result);
+    if(hit_result.bHit)
+    {
+        float3 hit_world_position = hit_result.hit_distance * ray_direction + world_position;
+        float3 hit_normal = CalculateGloablSDFNormal(hit_world_position);
 
-    [loop]
-    for(uint mesh_idx = 0; mesh_idx < SCENE_SDF_NUM; mesh_idx++)
-    {
-        RayTraceSingleMeshSDF(world_position, ray_direction, 1000, mesh_idx, trace_result);
+        if(hit_normal.x > 0.5)
+        {
+            return float4(1.0,0.0,0.0,1.0);
+        }
+        else if(hit_normal.x < -0.5)
+        {
+            return float4(0.2,0.0,0.0,1.0);
+        }
+        else if(hit_normal.y > 0.5)
+        {
+            return float4(0.0,1.0,0.0,1.0);
+        }
+        else if(hit_normal.y < -0.5)
+        {
+            return float4(0.0,0.2,0.0,1.0);
+        }
+        else if(hit_normal.z > 0.5)
+        {
+            return float4(0.0,0.0,1.0,1.0);
+        }
+        else if(hit_normal.z < -0.5)
+        {
+            return float4(0.0,0.0,0.2,1.0);
+        }
     }
-
-    float3 hit_world_position = float3(0.1,0.1,0.1);
-    float3 hit_pos_normal = float3(0.1,0.1,0.1);
-    if(trace_result.is_hit)
-    {
-        hit_world_position = world_position + ray_direction * trace_result.hit_distance;
-        hit_pos_normal = CalculateMeshSDFWorldNormal(world_position, ray_direction, trace_result);
-    }
-
-    if(hit_pos_normal.x > 0.5)
-    {
-        return float4(1.0,0.0,0.0,1.0);
-    }
-    else if(hit_pos_normal.x < -0.5)
-    {
-        return float4(0.2,0.0,0.0,1.0);
-    }
-    else if(hit_pos_normal.y > 0.5)
-    {
-        return float4(0.0,1.0,0.0,1.0);
-    }
-    else if(hit_pos_normal.y < -0.5)
-    {
-        return float4(0.0,0.2,0.0,1.0);
-    }
-    else if(hit_pos_normal.z > 0.5)
-    {
-        return float4(0.0,0.0,1.0,1.0);
-    }
-    else if(hit_pos_normal.z < -0.5)
-    {
-        return float4(0.0,0.0,0.2,1.0);
-    }
-
-    return float4(normalize(hit_pos_normal) * 0.5 + 0.5, 1.0);
-    //return float4(abs(hit_world_position) / 50.0, 1.0);
+    return float4(visualize_color.xyz, 1.0);
 }
