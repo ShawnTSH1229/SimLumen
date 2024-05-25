@@ -1,0 +1,2 @@
+#include "SimLumenCommon.hlsl"
+RWStructuredBuffer<SVoxelVisibilityInfo> scene_voxel_visibility_buffer;

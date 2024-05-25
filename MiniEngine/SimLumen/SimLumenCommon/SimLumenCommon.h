@@ -73,15 +73,6 @@ inline std::string ConvertBlobToString(BlotType* pBlob)
     return std::string(infoLog.data());
 }
 
-struct SLumenConfig
-{
-    Math::Vector3 m_LightDirection;
-    Math::XMINT2 m_atlas_size;
-    Math::XMINT2 m_atlas_num_xy;
-};
-
-SLumenConfig GetLumenConfig();
-
 struct SBox
 {
     Math::XMINT3 volume_min_pos;

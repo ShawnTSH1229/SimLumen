@@ -2,12 +2,7 @@
 #include "../SimLumenCommon/SimLumenCommon.h"
 #include "../SimLumenCommon/ShaderCompile.h"
 #include "SimLumenMeshInstance.h"
-#include "SimLumenRender.h"
-
-struct SCardCaptureInitDesc
-{
-	CShaderCompiler* m_shader_compiler;
-};
+#include "SimLumenGlobalResource.h"
 
 struct STempCardBuffer
 {
@@ -38,10 +33,10 @@ __declspec(align(256)) struct SCardCopyConstant
 class CSimLuCardCapturer
 {
 public:
-	void Init(SCardCaptureInitDesc& init_desc);
+	void Init();
 	void UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_instances, DescriptorHeap* desc_heap);
 private:
-	void CreatePSO(SCardCaptureInitDesc& init_desc);
+	void CreatePSO();
 
 	std::vector<STempCardBuffer> temp_cards;
 

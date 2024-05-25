@@ -48,9 +48,6 @@
     <ClCompile Include="SimLumenRuntime\SimLumenRuntimeCommon.cpp">
       <Filter>Source Files\Runtime</Filter>
     </ClCompile>
-    <ClCompile Include="SimLumenRuntime\SimLumenRender.cpp">
-      <Filter>Source Files\Runtime</Filter>
-    </ClCompile>
     <ClCompile Include="SimLumenCommon\MeshResource.cpp">
       <Filter>Source Files\Common</Filter>
     </ClCompile>
@@ -124,9 +121,6 @@
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="SimLumenRuntime\SimLumenRuntimeCommon.h">
-      <Filter>Source Files\Runtime</Filter>
-    </ClInclude>
-    <ClInclude Include="SimLumenRuntime\SimLumenRender.h">
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="SimLumenCommon\MeshResource.h">

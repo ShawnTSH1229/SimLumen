@@ -35,6 +35,7 @@ namespace Graphics
     extern ColorBuffer g_atlas_albedo;
     extern ColorBuffer g_atlas_normal;
     extern ColorBuffer g_atlas_depth;
+    extern DepthBuffer g_atlas_copy_depth;
     extern ColorBuffer g_surface_cache_direct;
     extern ColorBuffer g_surface_cache_indirect;
     extern ColorBuffer g_surface_cache_final;

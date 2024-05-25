@@ -14,7 +14,6 @@
 #include "SimLumenMeshBuilder/SimLumenMeshBuilder.h"
 #include "SimLumenRuntime/SimLumenMeshInstance.h"
 #include "SimLumenRuntime/SimLumenCardCapture.h"
-#include "SimLumenRuntime/SimLumenRender.h"
 #include "SimLumenRuntime/SimLumenGlobalResource.h"
 #include "SimLumenRuntime/SimLumenVisualization.h"
 
@@ -136,7 +135,6 @@ void SimLumen::Startup( void )
 
     InitGlobalResource();
 
-    GetGlobalRender()->Init();
     m_lumen_visualizer.Init();
 }
 
@@ -172,7 +170,7 @@ void SimLumen::RenderScene( void )
     SLumenViewGlobalConstant globals;
     globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
     globals.CameraPos = m_Camera.GetPosition();
-    globals.SunDirection = GetLumenConfig().m_LightDirection;
+    globals.SunDirection = GetGlobalResource().m_LightDirection;
     globals.SunIntensity = Math::Vector3(1, 1, 1);
     DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
     memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
@@ -203,7 +201,7 @@ void SimLumen::RenderScene( void )
 
     cbUpdateContext.Finish();
 
-    //m_card_capturer.UpdateSceneCards(GetGlobalResource().m_mesh_instances, &GetGlobalResource().s_TextureHeap);
+   m_card_capturer.UpdateSceneCards(GetGlobalResource().m_mesh_instances, &GetGlobalResource().s_TextureHeap);
 
     GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
 

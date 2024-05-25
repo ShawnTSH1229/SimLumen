@@ -76,7 +76,6 @@
     <ClInclude Include="SimLumenRuntime\SimLumenGLoablSDFUpdate.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenGlobalResource.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenMeshInstance.h" />
-    <ClInclude Include="SimLumenRuntime\SimLumenRender.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenRuntimeCommon.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenVisualization.h" />
   </ItemGroup>
@@ -96,7 +95,6 @@
     <ClCompile Include="SimLumenRuntime\SimLumenGLoablSDFUpdate.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenGlobalResource.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenMeshInstance.cpp" />
-    <ClCompile Include="SimLumenRuntime\SimLumenRender.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenRuntimeCommon.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenVisualization.cpp" />
   </ItemGroup>

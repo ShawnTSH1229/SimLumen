@@ -186,4 +186,22 @@ void InitGlobalResource()
 {
 	InitMeshSDFs();
 	InitGlobalSDF();
+
+	XMFLOAT3 vtx_pos[6] = {
+	XMFLOAT3(1,0,0),XMFLOAT3(1,1,0),XMFLOAT3(0,0,0),
+	XMFLOAT3(1,1,0), XMFLOAT3(0,1,0), XMFLOAT3(0,0,0) };
+	gSimLumenGlobalResource.m_full_screen_pos_buffer.Create(L"m_full_screen_pos_buffer", 6, sizeof(XMFLOAT3), vtx_pos);
+
+	//XMFLOAT2 vtx_uv[6] = {
+	// XMFLOAT2(1,0),XMFLOAT2(1,1),XMFLOAT2(0,0),
+	// XMFLOAT2(1,1) , XMFLOAT2(0,1),XMFLOAT2(0,0) };
+	XMFLOAT2 vtx_uv[6] = {
+	 XMFLOAT2(1,1),XMFLOAT2(1,0),XMFLOAT2(0,1),
+	 XMFLOAT2(1,0) , XMFLOAT2(0,0),XMFLOAT2(0,1) };
+
+	gSimLumenGlobalResource.m_full_screen_uv_buffer.Create(L"m_full_screen_uv_buffer", 6, sizeof(XMFLOAT2), vtx_uv);
+
+	gSimLumenGlobalResource.m_LightDirection = Normalize(Math::Vector3(-1, 1, 1));
+	gSimLumenGlobalResource.m_atlas_size = Math::XMINT2(2048, 2048);
+	gSimLumenGlobalResource.m_atlas_num_xy = Math::XMINT2(2048 / 128, 2048 / 128);
 }

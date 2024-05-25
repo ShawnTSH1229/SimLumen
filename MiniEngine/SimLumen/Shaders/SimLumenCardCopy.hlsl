@@ -21,13 +21,13 @@ VSOutput vs_main(VSInput vs_in)
 {
     // SV_Position left-top 0-0 right-bottom 4096-4096
     // 0 - 1
-    float2 dest_pos = (dest_atlas_index_and_scale.xy  + vs_in.position.xy) * dest_atlas_index_and_scale.zw;
-    dest_pos = dest_pos * 2.0 - 1.0;
+    float2 dest_pos = (dest_atlas_index_and_scale.xy  + vs_in.position.xy ) * dest_atlas_index_and_scale.zw;
+    dest_pos = (dest_pos * 2.0 - 1.0);
 
     // todo:  we should use a fixed camera and rotate the mesh card
 
     VSOutput vs_out;
-    vs_out.pos = float4(dest_pos, 0, 1);
+    vs_out.pos = float4(dest_pos, 1.0, 1.0);
     vs_out.uv = vs_in.uv;
     return vs_out;
 }

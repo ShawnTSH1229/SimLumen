@@ -45,4 +45,11 @@ struct SMeshSDFInfo
     float padding0;
     float padding1;
 };
+
+struct SVoxelVisibilityInfo
+{
+    uint mesh_index;
+    float hit_distance;
+};
+
 #endif

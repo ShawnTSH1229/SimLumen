@@ -2,9 +2,9 @@
 
 using namespace Graphics;
 
-void CSimLuCardCapturer::Init(SCardCaptureInitDesc& init_desc)
+void CSimLuCardCapturer::Init()
 {
-    CreatePSO(init_desc);
+    CreatePSO();
 
     m_need_updata_cards = true;
     m_gen_cards = true;
@@ -29,20 +29,23 @@ void CSimLuCardCapturer::UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_
         m_gen_cards = false;
     }
 
-
+    // card capture
     {
         for (int idx = 0; idx < temp_cards.size(); idx++)
         {
             gfxContext.TransitionResource(temp_cards[idx].m_temp_card_albedo, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
             gfxContext.TransitionResource(temp_cards[idx].m_temp_card_normal, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
             gfxContext.TransitionResource(temp_cards[idx].m_temp_card_depth, D3D12_RESOURCE_STATE_DEPTH_WRITE, false);
-
+        }
+        gfxContext.FlushResourceBarriers();
+        
+        for (int idx = 0; idx < temp_cards.size(); idx++)
+        {
             gfxContext.ClearColor(temp_cards[idx].m_temp_card_albedo);
             gfxContext.ClearColor(temp_cards[idx].m_temp_card_normal);
             gfxContext.ClearDepth(temp_cards[idx].m_temp_card_depth);
         }
-
-        gfxContext.FlushResourceBarriers();
+        
         gfxContext.SetViewportAndScissor(0, 0, 128, 128);
         gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, desc_heap->GetHeapPointer());
         gfxContext.SetRootSignature(m_card_capture_root_sig);
@@ -110,39 +113,46 @@ void CSimLuCardCapturer::UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_
         }
     }
  
-    //
+    // card copy
     {
+        for (int idx = 0; idx < temp_cards.size(); idx++)
+        {
+            gfxContext.TransitionResource(temp_cards[idx].m_temp_card_albedo, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
+            gfxContext.TransitionResource(temp_cards[idx].m_temp_card_normal, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
+            gfxContext.TransitionResource(temp_cards[idx].m_temp_card_depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
+        };
+
         gfxContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
         gfxContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
         gfxContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+        gfxContext.TransitionResource(g_atlas_copy_depth, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+        gfxContext.FlushResourceBarriers();
+        gfxContext.ClearDepth(g_atlas_copy_depth);
 
         D3D12_CPU_DESCRIPTOR_HANDLE rtvs[3] = { g_atlas_albedo.GetRTV(),g_atlas_normal.GetRTV(),g_atlas_depth.GetRTV() };
-        gfxContext.SetViewportAndScissor(0, 0, GetLumenConfig().m_atlas_size.x, GetLumenConfig().m_atlas_size.y);
+        gfxContext.SetViewportAndScissor(0, 0, GetGlobalResource().m_atlas_size.x, GetGlobalResource().m_atlas_size.y);
         gfxContext.SetRootSignature(m_card_copy_root_sig);
-        gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         gfxContext.SetPipelineState(m_card_copy_pso);
-        gfxContext.SetVertexBuffer(0, GetGlobalRender()->GetFullScreenPosBuffer()->VertexBufferView());
-        gfxContext.SetVertexBuffer(1, GetGlobalRender()->GetFullScreenUVBuffer()->VertexBufferView());
-        gfxContext.SetRenderTargets(3, rtvs);
-
+        gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        gfxContext.SetVertexBuffer(0, GetGlobalResource().m_full_screen_pos_buffer.VertexBufferView());
+        gfxContext.SetVertexBuffer(1, GetGlobalResource().m_full_screen_uv_buffer.VertexBufferView());
+        gfxContext.SetRenderTargets(3, rtvs, g_atlas_copy_depth.GetDSV());
+    
         for (int idx = 0; idx < temp_cards.size(); idx ++)
         {
             STempCardBuffer& temp_card = temp_cards[idx];
-            gfxContext.TransitionResource(temp_card.m_temp_card_albedo, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
-            gfxContext.TransitionResource(temp_card.m_temp_card_normal, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
-            gfxContext.TransitionResource(temp_card.m_temp_card_depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
-
+    
             gfxContext.SetDynamicDescriptor(1, 0, temp_card.m_temp_card_albedo.GetSRV());
             gfxContext.SetDynamicDescriptor(1, 1, temp_card.m_temp_card_normal.GetSRV());
             gfxContext.SetDynamicDescriptor(1, 2, temp_card.m_temp_card_depth.GetDepthSRV());
-
-            int dest_x = idx % GetLumenConfig().m_atlas_num_xy.x;
-            int dest_y = idx / GetLumenConfig().m_atlas_num_xy.y;
+    
+            int dest_x = idx % GetGlobalResource().m_atlas_num_xy.x;
+            int dest_y = idx / GetGlobalResource().m_atlas_num_xy.y;
             DynAlloc card_copy_constant = gfxContext.ReserveUploadMemory(sizeof(SCardCopyConstant));
-            Math::Vector4 dest_atlas_index_and_scale(dest_x, dest_y, 128.0 / 4096.0, 128.0 / 4096.0);
+            Math::Vector4 dest_atlas_index_and_scale(dest_x, dest_y, 128.0 / 2048, 128.0 / 2048);
             memcpy(card_copy_constant.DataPtr, &dest_atlas_index_and_scale, sizeof(SCardCopyConstant));
             gfxContext.SetConstantBuffer(0, card_copy_constant.GpuAddress);
-
+    
             gfxContext.Draw(6);
         }
     }
@@ -150,7 +160,7 @@ void CSimLuCardCapturer::UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_
     gfxContext.Finish();
 }
 
-void CSimLuCardCapturer::CreatePSO(SCardCaptureInitDesc& init_desc)
+void CSimLuCardCapturer::CreatePSO()
 {
 	{
         m_card_capture_root_sig.Reset(3, 1);
@@ -173,8 +183,8 @@ void CSimLuCardCapturer::CreatePSO(SCardCaptureInitDesc& init_desc)
         color_rt_foramts[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
         DXGI_FORMAT depth_foramt = DXGI_FORMAT_D32_FLOAT;
 
-        std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = init_desc.m_shader_compiler->Compile(L"Shaders/CardCapture.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
-        std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = init_desc.m_shader_compiler->Compile(L"Shaders/CardCapture.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
+        std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenCardCapture.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
+        std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenCardCapture.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
 
         m_card_capture_pso = GraphicsPSO(L"m_card_capture_pso");
         m_card_capture_pso.SetRootSignature(m_card_capture_root_sig);
@@ -196,10 +206,10 @@ void CSimLuCardCapturer::CreatePSO(SCardCaptureInitDesc& init_desc)
         m_card_copy_root_sig[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3, D3D12_SHADER_VISIBILITY_PIXEL);
         m_card_copy_root_sig.Finalize(L"m_card_copy_root_sig", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-        D3D12_INPUT_ELEMENT_DESC pos_norm_uv[] =
+        D3D12_INPUT_ELEMENT_DESC pos_uv[] =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       2, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         };
 
         DXGI_FORMAT color_rt_foramts[3];
@@ -208,17 +218,17 @@ void CSimLuCardCapturer::CreatePSO(SCardCaptureInitDesc& init_desc)
         color_rt_foramts[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
         color_rt_foramts[2] = DXGI_FORMAT_R32_FLOAT;
 
-        std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = init_desc.m_shader_compiler->Compile(L"Shaders/CardCopy.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
-        std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = init_desc.m_shader_compiler->Compile(L"Shaders/CardCopy.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
+        std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = init_desc.m_shader_compiler->Compile(L"Shaders/SimLumenCardCopy.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
+        std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = init_desc.m_shader_compiler->Compile(L"Shaders/SimLumenCardCopy.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
 
         m_card_copy_pso = GraphicsPSO(L"m_card_copy_pso");
         m_card_copy_pso.SetRootSignature(m_card_copy_root_sig);
         m_card_copy_pso.SetRasterizerState(RasterizerDefault);
         m_card_copy_pso.SetBlendState(BlendDisable);
-        m_card_copy_pso.SetDepthStencilState(DepthStateDisabled);
-        m_card_copy_pso.SetInputLayout(_countof(pos_norm_uv), pos_norm_uv);
+        m_card_copy_pso.SetDepthStencilState(DepthStateReadOnly);
+        m_card_copy_pso.SetInputLayout(_countof(pos_uv), pos_uv);
         m_card_copy_pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-        m_card_copy_pso.SetRenderTargetFormats(3, color_rt_foramts, DXGI_FORMAT_UNKNOWN);
+        m_card_copy_pso.SetRenderTargetFormats(3, color_rt_foramts, g_atlas_copy_depth.GetFormat());
         m_card_copy_pso.SetVertexShader(p_vs_shader_code->GetBufferPointer(), p_vs_shader_code->GetBufferSize());
         m_card_copy_pso.SetPixelShader(p_ps_shader_code->GetBufferPointer(), p_ps_shader_code->GetBufferSize());
         m_card_copy_pso.Finalize();

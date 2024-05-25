@@ -79,6 +79,13 @@ struct SSimLumenGlobalResource
 	DescriptorHeap s_TextureHeap;
 	DescriptorHeap s_SamplerHeap;
 
+	ByteAddressBuffer m_full_screen_pos_buffer;
+	ByteAddressBuffer m_full_screen_uv_buffer;
+
+	Math::Vector3 m_LightDirection;
+	Math::XMINT2 m_atlas_size;
+	Math::XMINT2 m_atlas_num_xy;
+
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal
 	int m_visualize_type;
