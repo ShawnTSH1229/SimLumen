@@ -73,11 +73,11 @@
     <ClInclude Include="SimLumenMeshBuilder\tiny_obj_loader.h" />
     <ClInclude Include="SimLumenRuntime\Shadow.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenCardCapture.h" />
-    <ClInclude Include="SimLumenRuntime\SimLumenGLoablSDFUpdate.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenGlobalResource.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenMeshInstance.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenRuntimeCommon.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenVisualization.h" />
+    <ClInclude Include="SimLumenRuntime\SimLumenVoxelScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
@@ -92,11 +92,11 @@
     <ClCompile Include="SimLumenMeshBuilder\SimLumenObjLoader.cpp" />
     <ClCompile Include="SimLumenRuntime\Shadow.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenCardCapture.cpp" />
-    <ClCompile Include="SimLumenRuntime\SimLumenGLoablSDFUpdate.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenGlobalResource.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenMeshInstance.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenRuntimeCommon.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenVisualization.cpp" />
+    <ClCompile Include="SimLumenRuntime\SimLumenVoxelScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Core/Core.vcxproj">

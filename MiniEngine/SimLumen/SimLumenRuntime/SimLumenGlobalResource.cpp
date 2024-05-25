@@ -204,4 +204,10 @@ void InitGlobalResource()
 	gSimLumenGlobalResource.m_LightDirection = Normalize(Math::Vector3(-1, 1, 1));
 	gSimLumenGlobalResource.m_atlas_size = Math::XMINT2(2048, 2048);
 	gSimLumenGlobalResource.m_atlas_num_xy = Math::XMINT2(2048 / 128, 2048 / 128);
+
+	gSimLumenGlobalResource.m_scene_voxel_vis_info.scene_voxel_min_pos = DirectX::XMFLOAT3(gloabl_sdf_center.x - gloabl_sdf_extent.x, gloabl_sdf_center.y - gloabl_sdf_extent.y, gloabl_sdf_center.z - gloabl_sdf_extent.z);
+	gSimLumenGlobalResource.m_scene_voxel_vis_info.scene_voxel_max_pos = DirectX::XMFLOAT3(gloabl_sdf_center.x + gloabl_sdf_extent.x, gloabl_sdf_center.y + gloabl_sdf_extent.y, gloabl_sdf_center.z + gloabl_sdf_extent.z);
+	gSimLumenGlobalResource.m_scene_voxel_vis_info.voxel_size = gloabl_sdf_voxel_size * 2;
+
+	gSimLumenGlobalResource.scene_voxel_visibility_buffer.Create(L"scene_voxel_visibility_buffer", SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z, sizeof(SVoxelVisibilityInfo));
 }

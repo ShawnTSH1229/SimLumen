@@ -27,7 +27,7 @@ float SampleDistanceFieldBrickTexture(float3 sample_position, SMeshSDFInfo mesh_
     int3 global_texel_index = int3(global_brick_index_x, global_brick_index_y, 0) * 8.0 + in_brick_index_xyz;
     float3 global_texel_uvw = float3(global_texel_index) / float3(texture_size_xyz);
 
-    float distance = distance_field_brick_tex.Sample(g_sampler_point_3d, global_texel_uvw);
+    float distance = distance_field_brick_tex.SampleLevel(g_sampler_point_3d, global_texel_uvw, 0);
     return distance * mesh_sdf_info.sdf_distance_scale.x + mesh_sdf_info.sdf_distance_scale.y;
 };
 
@@ -107,7 +107,6 @@ void RayTraceSingleMeshSDF(float3 world_ray_start,float3 world_ray_direction,flo
             trace_result.is_hit = true;   
             trace_result.hit_distance = sample_ray_t;
             trace_result.hit_mesh_index = object_index;
-            trace_result.hit_mesh_sdf_card_index = mesh_sdf_info.mesh_card_start_index;
         }
     }
 };

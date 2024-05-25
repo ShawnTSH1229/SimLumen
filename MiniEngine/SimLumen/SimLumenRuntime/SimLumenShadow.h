@@ -3,15 +3,10 @@
 #include "../SimLumenCommon/ShaderCompile.h"
 #include "SimLumenMeshInstance.h"
 #include "SimLumenGlobalResource.h"
-
-class CSimLumenVoxelScene
+class CSimLumenShadow
 {
 public:
 	void Init();
-	void UpdateVisibilityBuffer();
-
 private:
-
-	RootSignature m_vox_vis_update_sig;
-	ComputePSO m_vox_vis_update_pso;
+	ShadowCamera m_SunShadow;
 };

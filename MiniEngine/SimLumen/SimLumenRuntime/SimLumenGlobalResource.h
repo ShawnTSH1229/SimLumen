@@ -6,6 +6,10 @@
 #define SDF_BRICK_TEX_SIZE 1024
 #define SDF_BRICK_NUM_XY (SDF_BRICK_TEX_SIZE /g_brick_size)
 
+#define SCENE_VOXEL_SIZE_X 48
+#define SCENE_VOXEL_SIZE_Y 48
+#define SCENE_VOXEL_SIZE_Z 160
+
 struct SMeshSDFInfo
 {
 	Math::Matrix4 volume_to_world;
@@ -55,6 +59,27 @@ __declspec(align(256)) struct SMeshSdfBrickTextureInfo
 	DirectX::XMFLOAT3 global_sdf_tex_size_xyz;
 	float global_sdf_scale_y;
 };
+
+__declspec(align(256)) struct SceneVoxelVisibilityInfo
+{
+	DirectX::XMFLOAT3 scene_voxel_min_pos;
+	float padding;
+
+	DirectX::XMFLOAT3 scene_voxel_max_pos;
+	float voxel_size;
+};
+
+struct SVoxelDirVisInfo
+{
+	int mesh_index; // -1: invalid direction
+	float hit_distance;
+};
+
+struct SVoxelVisibilityInfo
+{
+	SVoxelDirVisInfo voxel_vis_info[6];
+};
+
 struct SSimLumenGlobalResource
 {
 	std::vector<SLumenMeshInstance> m_mesh_instances;
@@ -73,6 +98,8 @@ struct SSimLumenGlobalResource
 	uint32_t m_global_sdf_brick_tex_table_idx;
 	uint32_t m_global_sdf_brick_tex_sampler_table_idx;
 
+	SceneVoxelVisibilityInfo m_scene_voxel_vis_info;
+
 	D3D12_GPU_VIRTUAL_ADDRESS m_global_view_constant_buffer;
 	D3D12_GPU_VIRTUAL_ADDRESS m_mesh_sdf_brick_tex_info;
 
@@ -85,6 +112,8 @@ struct SSimLumenGlobalResource
 	Math::Vector3 m_LightDirection;
 	Math::XMINT2 m_atlas_size;
 	Math::XMINT2 m_atlas_num_xy;
+
+	StructuredBuffer scene_voxel_visibility_buffer;
 
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal

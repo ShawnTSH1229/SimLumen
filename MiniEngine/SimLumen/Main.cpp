@@ -16,6 +16,7 @@
 #include "SimLumenRuntime/SimLumenCardCapture.h"
 #include "SimLumenRuntime/SimLumenGlobalResource.h"
 #include "SimLumenRuntime/SimLumenVisualization.h"
+#include "SimLumenRuntime/SimLumenVoxelScene.h"
 
 using namespace GameCore;
 using namespace Graphics;
@@ -48,7 +49,7 @@ private:
     CSimLumenMeshBuilder m_MeshBuilder;
     CSimLuCardCapturer m_card_capturer;
     CSimLumenVisualization m_lumen_visualizer;
-    
+    CSimLumenVoxelScene m_lumen_vox_scene;
 };
 
 CREATE_APPLICATION( SimLumen )
@@ -128,10 +129,8 @@ void SimLumen::Startup( void )
     m_Camera.SetEyeAtUp(Vector3(0, 50, 50), Vector3(kZero), Vector3(kYUnitVector));
     m_Camera.SetZRange(1.0f, 10000.0f);
     m_CameraController.reset(new FlyingFPSCamera(m_Camera, Vector3(kYUnitVector)));
-
-    SCardCaptureInitDesc card_capturer_init_desc;
-    card_capturer_init_desc.m_shader_compiler = &GetGlobalResource().m_shader_compiler;
-    m_card_capturer.Init(card_capturer_init_desc);
+    m_card_capturer.Init();
+    m_lumen_vox_scene.Init();
 
     InitGlobalResource();
 
@@ -201,11 +200,11 @@ void SimLumen::RenderScene( void )
 
     cbUpdateContext.Finish();
 
-   m_card_capturer.UpdateSceneCards(GetGlobalResource().m_mesh_instances, &GetGlobalResource().s_TextureHeap);
+    m_card_capturer.UpdateSceneCards(GetGlobalResource().m_mesh_instances, &GetGlobalResource().s_TextureHeap);
+
+    m_lumen_vox_scene.UpdateVisibilityBuffer();
 
     GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
-
-
 
     gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
     gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);

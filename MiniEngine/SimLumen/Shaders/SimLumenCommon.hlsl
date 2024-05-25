@@ -16,7 +16,6 @@ struct STraceResult
     bool is_hit;
     float hit_distance;
     uint hit_mesh_index;
-    uint hit_mesh_sdf_card_index;
 };
 
 struct SGloablSDFHitResult
@@ -46,10 +45,26 @@ struct SMeshSDFInfo
     float padding1;
 };
 
+struct SVoxelDirVisInfo
+{
+    int mesh_index; // -1: invalid direction
+    float hit_distance;
+};
+
 struct SVoxelVisibilityInfo
 {
-    uint mesh_index;
-    float hit_distance;
+    SVoxelDirVisInfo voxel_vis_info[6];
+};
+
+static const float3 voxel_light_direction[6] = {
+    float3(+1.0,0,0),
+    float3(-1.0,0,0),
+    
+    float3(0,+1.0,0),
+    float3(0,-1.0,0),
+
+    float3(0,0,+1.0),
+    float3(0,0,-1.0),
 };
 
 #endif
