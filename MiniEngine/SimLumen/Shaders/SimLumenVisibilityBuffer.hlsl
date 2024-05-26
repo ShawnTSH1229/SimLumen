@@ -4,11 +4,7 @@ RWStructuredBuffer<SVoxelVisibilityInfo> scene_voxel_visibility_buffer : registe
 
 cbuffer SceneVoxelVisibilityInfo : register(b0)
 {
-    float3 scene_voxel_min_pos;
-    float padding_vox;
-
-    float3 scene_voxel_max_pos;
-    float voxel_size;
+    GLOBAL_LUMEN_SCENE_INFO
 };
 
 cbuffer CMeshSdfBrickTextureInfo : register(b1)

@@ -44,6 +44,7 @@ void CSimLumenGBufferGeneration::Init()
 
 void CSimLumenGBufferGeneration::Rendering(GraphicsContext& gfxContext)
 {
+    EngineProfiling::BeginBlock(L"CSimLumenGBufferGeneration");
     gfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
     gfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
     gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, false);
@@ -71,10 +72,8 @@ void CSimLumenGBufferGeneration::Rendering(GraphicsContext& gfxContext)
         memcpy(mesh_consatnt.DataPtr, &lumen_mesh_instance.m_LumenConstant, sizeof(SLumenMeshConstant));
 
         gfxContext.SetConstantBuffer(0, mesh_consatnt.GpuAddress);
-
-        gfxContext.SetDescriptorTable(2, GetGlobalResource().s_TextureHeap[lumen_mesh_instance.m_tex_table_idx]);
-        gfxContext.SetDescriptorTable(3, GetGlobalResource().s_SamplerHeap[lumen_mesh_instance.m_sampler_table_idx]);
-
+        gfxContext.SetDynamicDescriptor(2, 0, lumen_mesh_instance.m_tex.GetSRV());
+        gfxContext.SetDynamicSampler(3, 0, SamplerLinearClamp);
         gfxContext.SetVertexBuffer(0, lumen_mesh_instance.m_vertex_pos_buffer.VertexBufferView());
         gfxContext.SetVertexBuffer(1, lumen_mesh_instance.m_vertex_norm_buffer.VertexBufferView());
         gfxContext.SetVertexBuffer(2, lumen_mesh_instance.m_vertex_uv_buffer.VertexBufferView());
@@ -82,4 +81,5 @@ void CSimLumenGBufferGeneration::Rendering(GraphicsContext& gfxContext)
 
         gfxContext.DrawIndexed(lumen_mesh_instance.m_mesh_resource.m_indices.size());
     }
+    EngineProfiling::EndBlock();
 }

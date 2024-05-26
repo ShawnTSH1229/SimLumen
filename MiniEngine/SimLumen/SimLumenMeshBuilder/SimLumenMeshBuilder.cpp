@@ -55,28 +55,49 @@ XMFLOAT3 GetBouingBoxCorner(BoundingBox box, XMVECTORF32 corner)
 	return result;
 }
 
+void ComputeRotateBoundAndMatrix(const Math::BoundingBox& origin_box, Math::BoundingBox& cards_rotated_bound, Math::Matrix3& rotate_back, Vector3 Axis, const Scalar angle)
+{
+	origin_box.Transform(cards_rotated_bound, 1.0, Math::Quaternion(), -Math::Vector3(origin_box.Center));
+	cards_rotated_bound.Transform(cards_rotated_bound, 1.0, Math::Quaternion(Axis, -angle), Math::Vector3(0, 0, 0));
+	rotate_back = Math::Matrix3(Math::Quaternion(Axis, angle));
+}
+
 void CSimLumenMeshBuilder::BuildMeshCard(CSimLumenMeshResouce& mesh)
 {
 	XMFLOAT3 corners[8];
 	mesh.m_BoundingBox.GetCorners(corners);
 
 	Math::BoundingBox cards_bounds[6];
-
+	Math::BoundingBox cards_rotated_bounds[6];
+	Math::Matrix3 rotate_back[6];
 	// x y plane
 	cards_bounds[0] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,-1,+1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,+1,+1,0 }), XMFLOAT3(0, 0, -1), 0, 1, 2);
 	cards_bounds[1] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,-1,-1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,+1,-1,0 }), XMFLOAT3(0, 0, +1), 0, 1, 2);
 
-	// x z plane
-	cards_bounds[2] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,+1,-1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,+1,+1,0 }), XMFLOAT3(0, -1, 0), 0, 2, 1);
-	cards_bounds[3] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,-1,-1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,-1,+1,0 }), XMFLOAT3(0, +1, 0), 0, 2, 1);
+	ComputeRotateBoundAndMatrix(cards_bounds[0], cards_rotated_bounds[0], rotate_back[0], Vector3(1, 1, 1), 0);
+	ComputeRotateBoundAndMatrix(cards_bounds[1], cards_rotated_bounds[1], rotate_back[1], Vector3(0, 1, 0), Math::XM_PI);
 
+	// x z plane
+	cards_bounds[2] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,+1,+1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,+1,-1,0 }), XMFLOAT3(0, -1, 0), 0, 2, 1);
+	cards_bounds[3] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,-1,+1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,-1,-1,0 }), XMFLOAT3(0, +1, 0), 0, 2, 1);
+
+	fixbug;
+	ComputeRotateBoundAndMatrix(cards_bounds[2], cards_rotated_bounds[2], rotate_back[2], Vector3(1, 0, 0), Math::XM_PIDIV2);
+	ComputeRotateBoundAndMatrix(cards_bounds[3], cards_rotated_bounds[3], rotate_back[3], Vector3(1, 0, 0), -Math::XM_PIDIV2);
+	
 	// y z plane
 	cards_bounds[4] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,-1,-1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,+1,+1,0 }), XMFLOAT3(-1, 0, 0), 1, 2, 0);
 	cards_bounds[5] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,-1,-1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,+1,+1,0 }), XMFLOAT3(+1, 0, 0), 1, 2, 0);
 
+	ComputeRotateBoundAndMatrix(cards_bounds[4], cards_rotated_bounds[4], rotate_back[4], Vector3(0, 1, 0), Math::XM_PIDIV2);
+	ComputeRotateBoundAndMatrix(cards_bounds[5], cards_rotated_bounds[5], rotate_back[5], Vector3(0, 1, 0), -Math::XM_PIDIV2);
+
 	for (int idx = 0; idx < 6; idx++)
 	{
 		mesh.m_cards[idx].m_local_boundbox = cards_bounds[idx];
+		mesh.m_cards[idx].m_rotated_extents = cards_rotated_bounds[idx].Extents;
+		mesh.m_cards[idx].m_bound_center = cards_bounds[idx].Center;
+		mesh.m_cards[idx].m_rotate_back_matrix = rotate_back[idx];
 	}
 }
 

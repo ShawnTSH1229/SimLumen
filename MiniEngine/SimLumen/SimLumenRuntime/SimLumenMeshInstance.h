@@ -54,8 +54,6 @@ struct SLumenMeshInstance
 	SLumenMeshConstant m_LumenConstant;
 
 	TextureRef m_tex;
-	uint32_t m_tex_table_idx;
-	uint32_t m_sampler_table_idx;
 };
 
-void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, DescriptorHeap& tex_heap, DescriptorHeap& sampler_heap);
+void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances);

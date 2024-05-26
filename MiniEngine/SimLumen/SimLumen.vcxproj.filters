@@ -75,6 +75,9 @@
     <ClCompile Include="SimLumenRuntime\SimLumenLightingPass.cpp">
       <Filter>Source Files\Runtime</Filter>
     </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenSurfaceCache.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -151,6 +154,9 @@
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="SimLumenRuntime\SimLumenLightingPass.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenSurfaceCache.h">
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
   </ItemGroup>

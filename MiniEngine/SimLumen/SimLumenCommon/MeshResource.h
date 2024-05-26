@@ -30,6 +30,10 @@ struct SVolumeDFBuildData
 struct SLumenMeshCards
 {
 	Math::BoundingBox m_local_boundbox;
+
+	Math::Matrix4 m_rotate_back_matrix;
+	DirectX::XMFLOAT3 m_rotated_extents;
+	DirectX::XMFLOAT3 m_bound_center;
 };
 
 struct SSimLumenResourceHeader
@@ -42,15 +46,6 @@ class CSimLumenMeshResouce
 public:
 	SSimLumenResourceHeader m_header;
 	SVolumeDFBuildData m_volume_df_data;
-
-	// x+ -> x-
-	// x- -> x+
-	
-	// y+ -> y-
-	// y- -> y+
-	
-	// z+ -> z-
-	// z- -> z+
 
 	SLumenMeshCards m_cards[6];
 

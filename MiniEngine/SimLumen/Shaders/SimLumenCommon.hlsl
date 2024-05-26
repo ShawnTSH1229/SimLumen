@@ -22,6 +22,13 @@
     float4x4 ShadowViewProjMatrix;\
     float4x4 InverseViewProjMatrix;\
     
+#define GLOBAL_LUMEN_SCENE_INFO\
+    float3 scene_voxel_min_pos;\
+    float padding_vox;\
+    float3 scene_voxel_max_pos;\
+    float voxel_size;\
+    uint card_num_xy;\
+    uint scene_card_num;\
 
 struct STraceResult
 {
@@ -66,6 +73,24 @@ struct SVoxelDirVisInfo
 struct SVoxelVisibilityInfo
 {
     SVoxelDirVisInfo voxel_vis_info[6];
+};
+
+struct SCardInfo
+{
+    float4x4 local_to_world;
+    float4x4 rotate_back_matrix;
+    float3 rotated_extents;
+    float padding0;
+    float3 bound_center;
+    uint mesh_index;
+};
+
+struct SCardData
+{
+    bool is_valid;
+    float3 world_normal;
+    float3 world_position;
+    float3 albedo;
 };
 
 static const float3 voxel_light_direction[6] = {

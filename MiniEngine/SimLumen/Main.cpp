@@ -20,6 +20,7 @@
 #include "SimLumenRuntime/SimLumenShadow.h"
 #include "SimLumenRuntime/SimLumenGBufferGeneration.h"
 #include "SimLumenRuntime/SimLumenLightingPass.h"
+#include "SimLumenRuntime/SimLumenSurfaceCache.h"
 
 using namespace GameCore;
 using namespace Graphics;
@@ -38,23 +39,20 @@ public:
     virtual void Update( float deltaT ) override;
     virtual void RenderScene( void ) override;
 
+    void UpdateConstantBuffer(GraphicsContext& cbUpdateContext);
 private:
 
     Camera m_Camera;
     std::unique_ptr<CameraController> m_CameraController;
 
     CSimLumenShadow  m_shadowpass;
-
-    RootSignature m_BasePassRootSig;
-   
-    GraphicsPSO m_BasePassPSO;
-
     CSimLumenMeshBuilder m_MeshBuilder;
     CSimLuCardCapturer m_card_capturer;
     CSimLumenVisualization m_lumen_visualizer;
     CSimLumenVoxelScene m_lumen_vox_scene;
     CSimLumenGBufferGeneration m_gbuffer_generation;
     CSimLumenLightingPass m_lighting_pass;
+    CSimLumenSurfaceCache m_lumen_surface_cache;
 };
 
 CREATE_APPLICATION( SimLumen )
@@ -69,51 +67,11 @@ void SimLumen::Startup( void )
     PostEffects::EnableAdaptation = false;
     SSAO::Enable = false;
 
-    GetGlobalResource().s_TextureHeap.Create(L"Scene Texture Descriptors", D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4096);
-    GetGlobalResource().s_SamplerHeap.Create(L"Scene Sampler Descriptors", D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 2048);
-
     GetGlobalResource().m_shader_compiler.Init();
 
-    {
-
-        m_BasePassRootSig.Reset(4, 0);
-        m_BasePassRootSig[0].InitAsConstantBuffer(0);
-        m_BasePassRootSig[1].InitAsConstantBuffer(1);
-        m_BasePassRootSig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1, D3D12_SHADER_VISIBILITY_PIXEL);
-        m_BasePassRootSig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, 1, D3D12_SHADER_VISIBILITY_PIXEL);
-        m_BasePassRootSig.Finalize(L"m_BasePassRootSig", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-    }
-
-    D3D12_INPUT_ELEMENT_DESC pos_norm_uv[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT,      1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       2, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-    };
-
-    DXGI_FORMAT ColorFormat = g_SceneColorBuffer.GetFormat();
-    DXGI_FORMAT DepthFormat = g_SceneDepthBuffer.GetFormat();
-
-    // PSO
-    {
-        std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/BasePass.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
-        std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/BasePass.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
-
-        m_BasePassPSO = GraphicsPSO(L"BasePass PSO");
-        m_BasePassPSO.SetRootSignature(m_BasePassRootSig);
-        m_BasePassPSO.SetRasterizerState(RasterizerDefault);
-        m_BasePassPSO.SetBlendState(BlendDisable);
-        m_BasePassPSO.SetDepthStencilState(DepthStateReadWrite);
-        m_BasePassPSO.SetInputLayout(_countof(pos_norm_uv), pos_norm_uv);
-        m_BasePassPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-        m_BasePassPSO.SetRenderTargetFormats(1, &ColorFormat, DepthFormat);
-        m_BasePassPSO.SetVertexShader(p_vs_shader_code->GetBufferPointer(), p_vs_shader_code->GetBufferSize());
-        m_BasePassPSO.SetPixelShader(p_ps_shader_code->GetBufferPointer(), p_ps_shader_code->GetBufferSize());
-        m_BasePassPSO.Finalize();
-    }
 
     std::vector<SLumenMeshInstance>& scene_mesh = GetGlobalResource().m_mesh_instances;
-    CreateDemoScene(scene_mesh, GetGlobalResource().s_TextureHeap, GetGlobalResource().s_SamplerHeap);
+    CreateDemoScene(scene_mesh);
 
     std::vector<CSimLumenMeshResouce*> meshs;
     meshs.resize(scene_mesh.size());
@@ -142,6 +100,7 @@ void SimLumen::Startup( void )
     m_shadowpass.Init();
     m_gbuffer_generation.Init();
     m_lighting_pass.Init();
+    m_lumen_surface_cache.Init();
 }
 
 namespace Graphics
@@ -171,91 +130,53 @@ void SimLumen::Update( float deltaT )
 
 void SimLumen::RenderScene( void )
 {
-    {
-        GraphicsContext& cbUpdateContext = GraphicsContext::Begin(L"update view constant buffer");
-        SLumenViewGlobalConstant globals;
-        globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
-        globals.CameraPos = m_Camera.GetPosition();
-        globals.SunDirection = GetGlobalResource().m_LightDirection;
-        globals.SunIntensity = Math::Vector3(1, 1, 1);
-        globals.ShadowViewProjMatrix = GetGlobalResource().m_shadow_vpmatrix;
-        globals.InverseViewProjMatrix = Math::Invert(globals.ViewProjMatrix);
-        DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
-        memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
-        GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
-        SMeshSdfBrickTextureInfo global_sdf_info;
-        global_sdf_info.texture_brick_num_x = SDF_BRICK_NUM_XY;
-        global_sdf_info.texture_brick_num_y = SDF_BRICK_NUM_XY;
-
-        global_sdf_info.texture_size_x = SDF_BRICK_TEX_SIZE;
-        global_sdf_info.texture_size_y = SDF_BRICK_TEX_SIZE;
-        global_sdf_info.texture_size_z = g_brick_size;
-
-        global_sdf_info.scene_mesh_sdf_num = GetGlobalResource().m_mesh_instances.size();
-
-        global_sdf_info.gloabl_sdf_voxel_size = gloabl_sdf_voxel_size;
-        global_sdf_info.gloabl_sdf_center = gloabl_sdf_center;
-
-        global_sdf_info.global_sdf_extents = gloabl_sdf_extent;
-        global_sdf_info.global_sdf_scale_x = gloabl_sdf_scale_x;
-
-        global_sdf_info.global_sdf_tex_size_xyz = DirectX::XMFLOAT3(global_sdf_size_x, global_sdf_size_y, global_sdf_size_z);
-        global_sdf_info.global_sdf_scale_y = gloabl_sdf_scale_y;
-
-        DynAlloc gloabl_sdf = cbUpdateContext.ReserveUploadMemory(sizeof(SMeshSdfBrickTextureInfo));
-        memcpy(gloabl_sdf.DataPtr, &global_sdf_info, sizeof(SMeshSdfBrickTextureInfo));
-        GetGlobalResource().m_mesh_sdf_brick_tex_info = gloabl_sdf.GpuAddress;
-        cbUpdateContext.Finish();
-    }
-
-    //m_lumen_vox_scene.UpdateVisibilityBuffer();
-
     GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
-    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
-    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
-
+    UpdateConstantBuffer(gfxContext);
+    m_lumen_vox_scene.UpdateVisibilityBuffer();
     m_card_capturer.UpdateSceneCards(gfxContext);
+    m_lumen_surface_cache.Rendering();
     m_shadowpass.RenderingShadowMap(gfxContext);
     m_gbuffer_generation.Rendering(gfxContext);
-
-    //gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
-    //gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
-    //gfxContext.ClearDepth(g_SceneDepthBuffer);
-    //gfxContext.ClearColor(g_SceneColorBuffer);
-    //
-    //gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
-    //gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
-    //
-    //gfxContext.SetRootSignature(m_BasePassRootSig);
-    //gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    //
-    //gfxContext.SetPipelineState(m_BasePassPSO);
-    //gfxContext.SetConstantBuffer(1, GetGlobalResource().m_global_view_constant_buffer);
-    //gfxContext.FlushResourceBarriers();
-    //
-    //gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
-    //gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
-    //for (int mesh_idx = 0; mesh_idx < GetGlobalResource().m_mesh_instances.size(); mesh_idx++)
-    //{
-    //    SLumenMeshInstance& lumen_mesh_instance = GetGlobalResource().m_mesh_instances[mesh_idx];
-    //
-    //    DynAlloc mesh_consatnt = gfxContext.ReserveUploadMemory(sizeof(SLumenMeshConstant));
-    //    memcpy(mesh_consatnt.DataPtr, &lumen_mesh_instance.m_LumenConstant, sizeof(SLumenMeshConstant));
-    //
-    //    gfxContext.SetConstantBuffer(0, mesh_consatnt.GpuAddress);
-    //    
-    //    gfxContext.SetDescriptorTable(2, GetGlobalResource().s_TextureHeap[lumen_mesh_instance.m_tex_table_idx]);
-    //    gfxContext.SetDescriptorTable(3, GetGlobalResource().s_SamplerHeap[lumen_mesh_instance.m_sampler_table_idx]);
-    //
-    //    gfxContext.SetVertexBuffer(0, lumen_mesh_instance.m_vertex_pos_buffer.VertexBufferView());
-    //    gfxContext.SetVertexBuffer(1, lumen_mesh_instance.m_vertex_norm_buffer.VertexBufferView());
-    //    gfxContext.SetVertexBuffer(2, lumen_mesh_instance.m_vertex_uv_buffer.VertexBufferView());
-    //    gfxContext.SetIndexBuffer(lumen_mesh_instance.m_index_buffer.IndexBufferView());
-    //    
-    //    gfxContext.DrawIndexed(lumen_mesh_instance.m_mesh_resource.m_indices.size());
-    //}
-
     m_lighting_pass.Rendering(gfxContext);
     m_lumen_visualizer.Render(gfxContext);
     gfxContext.Finish();
+}
+
+void SimLumen::UpdateConstantBuffer(GraphicsContext& cbUpdateContext)
+{
+    EngineProfiling::BeginBlock(L"UpdateConstantBuffer");
+
+    SLumenViewGlobalConstant globals;
+    globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
+    globals.CameraPos = m_Camera.GetPosition();
+    globals.SunDirection = GetGlobalResource().m_LightDirection;
+    globals.SunIntensity = Math::Vector3(1, 1, 1);
+    globals.ShadowViewProjMatrix = GetGlobalResource().m_shadow_vpmatrix;
+    globals.InverseViewProjMatrix = Math::Invert(globals.ViewProjMatrix);
+    DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
+    memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
+    GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
+    SMeshSdfBrickTextureInfo global_sdf_info;
+    global_sdf_info.texture_brick_num_x = SDF_BRICK_NUM_XY;
+    global_sdf_info.texture_brick_num_y = SDF_BRICK_NUM_XY;
+
+    global_sdf_info.texture_size_x = SDF_BRICK_TEX_SIZE;
+    global_sdf_info.texture_size_y = SDF_BRICK_TEX_SIZE;
+    global_sdf_info.texture_size_z = g_brick_size;
+
+    global_sdf_info.scene_mesh_sdf_num = GetGlobalResource().m_mesh_instances.size();
+
+    global_sdf_info.gloabl_sdf_voxel_size = gloabl_sdf_voxel_size;
+    global_sdf_info.gloabl_sdf_center = gloabl_sdf_center;
+
+    global_sdf_info.global_sdf_extents = gloabl_sdf_extent;
+    global_sdf_info.global_sdf_scale_x = gloabl_sdf_scale_x;
+
+    global_sdf_info.global_sdf_tex_size_xyz = DirectX::XMFLOAT3(global_sdf_size_x, global_sdf_size_y, global_sdf_size_z);
+    global_sdf_info.global_sdf_scale_y = gloabl_sdf_scale_y;
+
+    DynAlloc gloabl_sdf = cbUpdateContext.ReserveUploadMemory(sizeof(SMeshSdfBrickTextureInfo));
+    memcpy(gloabl_sdf.DataPtr, &global_sdf_info, sizeof(SMeshSdfBrickTextureInfo));
+    GetGlobalResource().m_mesh_sdf_brick_tex_info = gloabl_sdf.GpuAddress;
+    EngineProfiling::EndBlock();
 }

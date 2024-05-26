@@ -62,13 +62,16 @@ __declspec(align(256)) struct SMeshSdfBrickTextureInfo
 	float global_sdf_scale_y;
 };
 
-__declspec(align(256)) struct SceneVoxelVisibilityInfo
+__declspec(align(256)) struct SLumenSceneInfo
 {
 	DirectX::XMFLOAT3 scene_voxel_min_pos;
 	float padding;
 
 	DirectX::XMFLOAT3 scene_voxel_max_pos;
 	float voxel_size;
+
+	uint32_t card_num_xy;
+	uint32_t scene_card_num;
 };
 
 struct SVoxelDirVisInfo
@@ -82,6 +85,16 @@ struct SVoxelVisibilityInfo
 	SVoxelDirVisInfo voxel_vis_info[6];
 };
 
+struct SCardInfo
+{
+	Math::Matrix4 local_to_world;
+	Math::Matrix4 rotate_back_matrix;
+	DirectX::XMFLOAT3 rotated_extents;
+	float padding0;
+	DirectX::XMFLOAT3 bound_center;
+	uint32_t mesh_index;
+};
+
 struct SSimLumenGlobalResource
 {
 	std::vector<SLumenMeshInstance> m_mesh_instances;
@@ -89,24 +102,22 @@ struct SSimLumenGlobalResource
 
 	CShaderCompiler m_shader_compiler;
 
+	// sdf
 	std::vector<SMeshSDFInfo> m_mesh_sdf_infos;
 	StructuredBuffer m_scene_sdf_infos_gpu;
 
 	TextureRef m_scene_mesh_sdf_brick_texture;
-	uint32_t m_mesh_sdf_brick_tex_table_idx;
-	uint32_t m_mesh_sdf_brick_tex_sampler_table_idx;
-
 	TextureRef m_global_sdf_brick_texture;
-	uint32_t m_global_sdf_brick_tex_table_idx;
-	uint32_t m_global_sdf_brick_tex_sampler_table_idx;
 
-	SceneVoxelVisibilityInfo m_scene_voxel_vis_info;
+	// scene card info
+	std::vector<SCardInfo> m_scene_card_info;
+	StructuredBuffer m_scene_card_infos_gpu;
+
+	// voxel vis
+	SLumenSceneInfo m_lumen_scene_info;
 
 	D3D12_GPU_VIRTUAL_ADDRESS m_global_view_constant_buffer;
 	D3D12_GPU_VIRTUAL_ADDRESS m_mesh_sdf_brick_tex_info;
-
-	DescriptorHeap s_TextureHeap;
-	DescriptorHeap s_SamplerHeap;
 
 	ByteAddressBuffer m_full_screen_pos_buffer;
 	ByteAddressBuffer m_full_screen_uv_buffer;

@@ -78,6 +78,7 @@
     <ClInclude Include="SimLumenRuntime\SimLumenMeshInstance.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenRuntimeCommon.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenShadow.h" />
+    <ClInclude Include="SimLumenRuntime\SimLumenSurfaceCache.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenVisualization.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenVoxelScene.h" />
   </ItemGroup>
@@ -99,6 +100,7 @@
     <ClCompile Include="SimLumenRuntime\SimLumenMeshInstance.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenRuntimeCommon.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenShadow.cpp" />
+    <ClCompile Include="SimLumenRuntime\SimLumenSurfaceCache.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenVisualization.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenVoxelScene.cpp" />
   </ItemGroup>

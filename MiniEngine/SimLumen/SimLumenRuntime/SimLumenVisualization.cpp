@@ -134,6 +134,7 @@ void CSimLumenVisualization::Init()
 
 void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
 {
+	EngineProfiling::BeginBlock(L"CSimLumenVisualization");
 	if (GetGlobalResource().m_visualize_type == 1)
 	{
 		VisualizeMeshSDFs(gfxContext);
@@ -142,6 +143,7 @@ void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
 	{
 		VisualizeGloablSDFs(gfxContext);
 	}
+	EngineProfiling::EndBlock();
 }
 
 void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
@@ -157,16 +159,12 @@ void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
 	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gfxContext.SetPipelineState(m_vis_sdf_pso);
 
-	//gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
-	//gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
-
 	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
 	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);
 	gfxContext.SetDynamicDescriptor(2, 0, m_sdf_instance_buffer.GetSRV());
 	gfxContext.SetDynamicDescriptor(2, 1, GetGlobalResource().m_scene_sdf_infos_gpu.GetSRV());
-	gfxContext.SetDescriptorTable(3, GetGlobalResource().s_TextureHeap[GetGlobalResource().m_mesh_sdf_brick_tex_table_idx]);
-	gfxContext.SetDescriptorTable(4, GetGlobalResource().s_SamplerHeap[GetGlobalResource().m_mesh_sdf_brick_tex_sampler_table_idx]);
-
+	gfxContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
+	gfxContext.SetDynamicSampler(4, 0, SamplerPointClamp);
 	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
 	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());
 	gfxContext.SetIndexBuffer(m_sdf_vis_index_buffer.IndexBufferView());
@@ -186,16 +184,12 @@ void CSimLumenVisualization::VisualizeGloablSDFs(GraphicsContext& gfxContext)
 	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gfxContext.SetPipelineState(m_vis_global_sdf_pso);
 
-	//gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
-	//gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
-
 	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
 	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);
 	gfxContext.SetDynamicDescriptor(2, 0, m_sdf_instance_buffer.GetSRV());
 	gfxContext.SetDynamicDescriptor(2, 1, GetGlobalResource().m_scene_sdf_infos_gpu.GetSRV());
-	gfxContext.SetDescriptorTable(3, GetGlobalResource().s_TextureHeap[GetGlobalResource().m_global_sdf_brick_tex_table_idx]);
-	gfxContext.SetDescriptorTable(4, GetGlobalResource().s_SamplerHeap[GetGlobalResource().m_global_sdf_brick_tex_sampler_table_idx]);
-
+	gfxContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
+	gfxContext.SetDynamicSampler(4, 0, SamplerPointClamp);
 	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
 	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());
 	gfxContext.SetIndexBuffer(m_sdf_vis_index_buffer.IndexBufferView());

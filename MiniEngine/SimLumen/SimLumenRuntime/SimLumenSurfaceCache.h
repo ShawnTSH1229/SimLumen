@@ -4,15 +4,12 @@
 #include "SimLumenMeshInstance.h"
 #include "SimLumenGlobalResource.h"
 
-class CSimLumenVoxelScene
+class CSimLumenSurfaceCache
 {
 public:
 	void Init();
-	void UpdateVisibilityBuffer();
-
+	void Rendering();
 private:
-
-	RootSignature m_vox_vis_update_sig;
-	ComputePSO m_vox_vis_update_pso;
-	bool need_update_vis_buffer;
+	RootSignature m_surface_cache_direct_light_sig;
+	ComputePSO m_surface_cache_direct_light_pso;
 };

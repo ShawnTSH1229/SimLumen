@@ -12,7 +12,8 @@ void CSimLuCardCapturer::Init()
 
 void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
 {
-    if (m_need_updata_cards)
+    EngineProfiling::BeginBlock(L"UpdateSceneCards");
+    //if (m_need_updata_cards)
     {
         std::vector<SLumenMeshInstance>& mesh_instances = GetGlobalResource().m_mesh_instances;
         if (m_gen_cards)
@@ -53,6 +54,7 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
             gfxContext.SetPipelineState(m_card_capture_pso);
 
             Vector3 light_direction_neg[6] = { Vector3(0,0,-1),Vector3(0,0,1), Vector3(0,-1,0), Vector3(0,1,0), Vector3(-1,0,0), Vector3(1,0,0) };
+            Vector3 up_directions[6] = { Vector3(0,1,0),Vector3(0,1,0), Vector3(0,0,-1), Vector3(0,0,+1), Vector3(0,+1,0), Vector3(0,+1,0) , fixbug};
 
             for (int idx = 0; idx < mesh_instances.size(); idx++)
             {
@@ -73,10 +75,6 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
                         // 4 / 5 -> 2 ->  0
 
                         int dimension = 2 - dir / 2;
-                        int up_dir = (dimension + 3 - 1) % 3;
-
-                        XMFLOAT3 up_direction(0, 0, 0);
-                        AddFloatComponent(up_direction, up_dir, 1.0);
 
                         SLumenMeshCards& mesh_card = mesh_resouce.m_cards[dir];
                         Math::BoundingBox& bound_box = mesh_card.m_local_boundbox;
@@ -89,7 +87,7 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
                             0,
                             GetFloatComponent(bound_box.Extents, dimension) * 2);
 
-                        m_card_camera.SetEyeAtUp(bound_center - (bound_extent + Vector3(1e-5, 1e-5, 1e-5)) * light_direction_neg[dir], bound_center, up_direction);
+                        m_card_camera.SetEyeAtUp(bound_center - (bound_extent + Vector3(1e-5, 1e-5, 1e-5)) * light_direction_neg[dir], bound_center, up_directions[dir]);
                         m_card_camera.SetProjMatrix(Matrix4(proj_matrix));
                         m_card_camera.Update();
                     }
@@ -102,7 +100,7 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
 
                     D3D12_CPU_DESCRIPTOR_HANDLE rtvs[2] = { temp_cards[idx * 6 + dir].m_temp_card_albedo.GetRTV(),temp_cards[idx * 6 + dir].m_temp_card_normal.GetRTV() };
                     gfxContext.SetRenderTargets(2, rtvs, temp_cards[idx * 6 + dir].m_temp_card_depth.GetDSV());
-                    gfxContext.SetDescriptorTable(2, GetGlobalResource().s_TextureHeap[lumen_mesh_instance.m_tex_table_idx]);
+                    gfxContext.SetDynamicDescriptor(2, 0, lumen_mesh_instance.m_tex.GetSRV());
                     gfxContext.SetVertexBuffer(0, lumen_mesh_instance.m_vertex_pos_buffer.VertexBufferView());
                     gfxContext.SetVertexBuffer(1, lumen_mesh_instance.m_vertex_norm_buffer.VertexBufferView());
                     gfxContext.SetVertexBuffer(2, lumen_mesh_instance.m_vertex_uv_buffer.VertexBufferView());
@@ -149,7 +147,7 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
                 int dest_x = idx % GetGlobalResource().m_atlas_num_xy.x;
                 int dest_y = idx / GetGlobalResource().m_atlas_num_xy.y;
                 DynAlloc card_copy_constant = gfxContext.ReserveUploadMemory(sizeof(SCardCopyConstant));
-                Math::Vector4 dest_atlas_index_and_scale(dest_x, dest_y, 128.0 / 2048, 128.0 / 2048);
+                Math::Vector4 dest_atlas_index_and_scale(dest_x, dest_y, 128.0 / float(GetGlobalResource().m_atlas_size.y) , 128.0 / (GetGlobalResource().m_atlas_size.y));
                 memcpy(card_copy_constant.DataPtr, &dest_atlas_index_and_scale, sizeof(SCardCopyConstant));
                 gfxContext.SetConstantBuffer(0, card_copy_constant.GpuAddress);
                 gfxContext.Draw(6);
@@ -157,6 +155,7 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
         }
         m_need_updata_cards = false;
     }
+    EngineProfiling::EndBlock();
 }
 
 void CSimLuCardCapturer::CreatePSO()

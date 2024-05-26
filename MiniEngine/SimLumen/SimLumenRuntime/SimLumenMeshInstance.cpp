@@ -131,17 +131,11 @@ static void CreateBoxMeshResource(SLumenMeshInstance& mesh_instance, float x, fl
 //Right Handle
 //https://learn.microsoft.com/en-us/windows/win32/direct3d9/coordinate-systems
 
-void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, DescriptorHeap& tex_heap, DescriptorHeap& sampler_heap)
+void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances)
 {
 	out_mesh_instances.resize(13);
 
 	TextureRef cube_tex;
-	uint32_t cube_tex_table_idx;
-	uint32_t cube_sampler_table_idx;
-
-	uint32_t DestCount = 1;
-	uint32_t SourceCount = 1;
-
 	int current_mesh_idx = 0;
 
 	//texture
@@ -150,24 +144,6 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 		CompileTextureOnDemand(original_file, 0);
 		std::wstring ddsFile = Utility::RemoveExtension(original_file) + L".dds";
 		cube_tex = TextureManager::LoadDDSFromFile(ddsFile);
-
-		DescriptorHandle texture_handles = tex_heap.Alloc(1);
-		cube_tex_table_idx = tex_heap.GetOffsetOfHandle(texture_handles);
-
-		D3D12_CPU_DESCRIPTOR_HANDLE SourceTextures[1];
-		SourceTextures[0] = cube_tex.GetSRV();
-
-		g_Device->CopyDescriptors(1, &texture_handles, &DestCount, DestCount, SourceTextures, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	}
-
-	//sampler
-	{
-		DescriptorHandle SamplerHandles = sampler_heap.Alloc(1);
-		cube_sampler_table_idx = sampler_heap.GetOffsetOfHandle(SamplerHandles);
-
-		D3D12_CPU_DESCRIPTOR_HANDLE SourceSamplers[1] = { SamplerLinearWrap };
-
-		g_Device->CopyDescriptors(1, &SamplerHandles, &DestCount, DestCount, SourceSamplers, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 	}
 
 	for (int idx = 0; idx < out_mesh_instances.size(); idx++)
@@ -176,8 +152,6 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 		SLumenMeshInstance& mesh_instance = out_mesh_instances[idx];
 
 		mesh_instance.m_tex = cube_tex;
-		mesh_instance.m_tex_table_idx = cube_tex_table_idx;
-		mesh_instance.m_sampler_table_idx = cube_sampler_table_idx;
 	}
 
 	{
@@ -205,14 +179,6 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 			CompileTextureOnDemand(original_file, 0);
 			std::wstring ddsFile = Utility::RemoveExtension(original_file) + L".dds";
 			mesh_tex = TextureManager::LoadDDSFromFile(ddsFile);
-
-			DescriptorHandle texture_handles = tex_heap.Alloc(1);
-			mesh_tex_table_idx = tex_heap.GetOffsetOfHandle(texture_handles);
-
-			D3D12_CPU_DESCRIPTOR_HANDLE SourceTextures[1];
-			SourceTextures[0] = mesh_tex.GetSRV();
-
-			g_Device->CopyDescriptors(1, &texture_handles, &DestCount, DestCount, SourceTextures, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
 		SLumenMeshInstance& mesh_instance = out_mesh_instances[current_mesh_idx++];
@@ -225,8 +191,6 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 		CreateBuffer(mesh_instance.m_index_buffer, mesh_resource.m_indices.data(), mesh_resource.m_indices.size(), sizeof(unsigned int));
 
 		mesh_instance.m_tex = mesh_tex;
-		mesh_instance.m_tex_table_idx = mesh_tex_table_idx;
-		mesh_instance.m_sampler_table_idx = cube_sampler_table_idx;
 
 		mesh_resource.m_volume_df_data.m_VoxelSize = 0.5;
 		mesh_resource.m_local_to_world = Math::Matrix4(Math::AffineTransform(Vector3(-10, 0, -50)));
@@ -237,9 +201,6 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 
 		mesh_resource.LoadFrom(std::wstring(L"Assets/erato.obj"), false);
 	}
-
-
-
 
 	{
 		CreateBoxMeshResource(
@@ -314,6 +275,4 @@ void CreateDemoScene(std::vector<SLumenMeshInstance>& out_mesh_instances, Descri
 			-10, 36, -150,
 			1.0, 1.0, 1.0);
 	}
-
-
 }

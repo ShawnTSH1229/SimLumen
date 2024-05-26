@@ -107,30 +107,7 @@ static void InitMeshSDFs()
 		Utility::Printf("Write file false.\n");
 	}
 
-	uint32_t DestCount = 1;
-	uint32_t SourceCount = 1;
-
-	{
-		gSimLumenGlobalResource.m_scene_mesh_sdf_brick_texture = TextureManager::LoadDDSFromFile(sdf_file);
-		DescriptorHandle texture_handles = GetGlobalResource().s_TextureHeap.Alloc(1);
-		gSimLumenGlobalResource.m_mesh_sdf_brick_tex_table_idx = GetGlobalResource().s_TextureHeap.GetOffsetOfHandle(texture_handles);
-
-		D3D12_CPU_DESCRIPTOR_HANDLE SourceTextures[1];
-		SourceTextures[0] = gSimLumenGlobalResource.m_scene_mesh_sdf_brick_texture.GetSRV();
-
-		g_Device->CopyDescriptors(1, &texture_handles, &DestCount, DestCount, SourceTextures, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	}
-
-	//sampler
-	{
-		DescriptorHandle SamplerHandles = GetGlobalResource().s_SamplerHeap.Alloc(1);
-		gSimLumenGlobalResource.m_mesh_sdf_brick_tex_sampler_table_idx = GetGlobalResource().s_SamplerHeap.GetOffsetOfHandle(SamplerHandles);
-
-		D3D12_CPU_DESCRIPTOR_HANDLE SourceSamplers[1] = { SamplerPointClamp };
-
-		g_Device->CopyDescriptors(1, &SamplerHandles, &DestCount, DestCount, SourceSamplers, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-	}
-
+	gSimLumenGlobalResource.m_scene_mesh_sdf_brick_texture = TextureManager::LoadDDSFromFile(sdf_file);
 }
 
 void InitGlobalSDF()
@@ -157,44 +134,44 @@ void InitGlobalSDF()
 		Utility::Printf("Write file false.\n");
 	}
 
-	uint32_t DestCount = 1;
-	uint32_t SourceCount = 1;
+	gSimLumenGlobalResource.m_global_sdf_brick_texture = TextureManager::LoadDDSFromFile(global_sdf_file);
+}
 
+
+void InitSceneCardInfo()
+{
+	std::vector<SLumenMeshInstance>& scene_meshs = gSimLumenGlobalResource.m_mesh_instances;
+	std::vector<SCardInfo>& scene_card_infos = gSimLumenGlobalResource.m_scene_card_info;
+	for (int mesh_idx = 0; mesh_idx < scene_meshs.size(); mesh_idx++)
 	{
-		gSimLumenGlobalResource.m_global_sdf_brick_texture = TextureManager::LoadDDSFromFile(global_sdf_file);
-		DescriptorHandle texture_handles = GetGlobalResource().s_TextureHeap.Alloc(1);
-		gSimLumenGlobalResource.m_global_sdf_brick_tex_table_idx = GetGlobalResource().s_TextureHeap.GetOffsetOfHandle(texture_handles);
+		SLumenMeshInstance& mesh = scene_meshs[mesh_idx];
+		CSimLumenMeshResouce& mesh_resource = mesh.m_mesh_resource;
 
-		D3D12_CPU_DESCRIPTOR_HANDLE SourceTextures[1];
-		SourceTextures[0] = gSimLumenGlobalResource.m_global_sdf_brick_texture.GetSRV();
-
-		g_Device->CopyDescriptors(1, &texture_handles, &DestCount, DestCount, SourceTextures, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	}
-
-	//sampler
-	{
-		DescriptorHandle SamplerHandles = GetGlobalResource().s_SamplerHeap.Alloc(1);
-		gSimLumenGlobalResource.m_global_sdf_brick_tex_sampler_table_idx = GetGlobalResource().s_SamplerHeap.GetOffsetOfHandle(SamplerHandles);
-
-		D3D12_CPU_DESCRIPTOR_HANDLE SourceSamplers[1] = { SamplerPointClamp };
-
-		g_Device->CopyDescriptors(1, &SamplerHandles, &DestCount, DestCount, SourceSamplers, &SourceCount, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-	}
+		for (int dir = 0; dir < 6; dir++)
+		{
+			SCardInfo card_info;
+			card_info.rotate_back_matrix = mesh_resource.m_cards[dir].m_rotate_back_matrix;
+			card_info.rotated_extents = mesh_resource.m_cards[dir].m_rotated_extents;
+			card_info.bound_center = mesh_resource.m_cards[dir].m_bound_center;
+			card_info.mesh_index = mesh_idx;
+			card_info.local_to_world = mesh_resource.m_local_to_world;
+			scene_card_infos.push_back(card_info);
+		}
+	};
+	gSimLumenGlobalResource.m_scene_card_infos_gpu.Create(L"m_scene_card_infos_gpu", scene_card_infos.size(), sizeof(SCardInfo), scene_card_infos.data());
 }
 
 void InitGlobalResource()
 {
 	InitMeshSDFs();
 	InitGlobalSDF();
+	InitSceneCardInfo();
 
 	XMFLOAT3 vtx_pos[6] = {
 	XMFLOAT3(1,0,0),XMFLOAT3(1,1,0),XMFLOAT3(0,0,0),
 	XMFLOAT3(1,1,0), XMFLOAT3(0,1,0), XMFLOAT3(0,0,0) };
 	gSimLumenGlobalResource.m_full_screen_pos_buffer.Create(L"m_full_screen_pos_buffer", 6, sizeof(XMFLOAT3), vtx_pos);
 
-	//XMFLOAT2 vtx_uv[6] = {
-	// XMFLOAT2(1,0),XMFLOAT2(1,1),XMFLOAT2(0,0),
-	// XMFLOAT2(1,1) , XMFLOAT2(0,1),XMFLOAT2(0,0) };
 	XMFLOAT2 vtx_uv[6] = {
 	 XMFLOAT2(1,1),XMFLOAT2(1,0),XMFLOAT2(0,1),
 	 XMFLOAT2(1,0) , XMFLOAT2(0,0),XMFLOAT2(0,1) };
@@ -205,9 +182,10 @@ void InitGlobalResource()
 	gSimLumenGlobalResource.m_atlas_size = Math::XMINT2(2048, 2048);
 	gSimLumenGlobalResource.m_atlas_num_xy = Math::XMINT2(2048 / 128, 2048 / 128);
 
-	gSimLumenGlobalResource.m_scene_voxel_vis_info.scene_voxel_min_pos = DirectX::XMFLOAT3(gloabl_sdf_center.x - gloabl_sdf_extent.x, gloabl_sdf_center.y - gloabl_sdf_extent.y, gloabl_sdf_center.z - gloabl_sdf_extent.z);
-	gSimLumenGlobalResource.m_scene_voxel_vis_info.scene_voxel_max_pos = DirectX::XMFLOAT3(gloabl_sdf_center.x + gloabl_sdf_extent.x, gloabl_sdf_center.y + gloabl_sdf_extent.y, gloabl_sdf_center.z + gloabl_sdf_extent.z);
-	gSimLumenGlobalResource.m_scene_voxel_vis_info.voxel_size = gloabl_sdf_voxel_size * 2;
+	gSimLumenGlobalResource.m_lumen_scene_info.scene_voxel_min_pos = DirectX::XMFLOAT3(gloabl_sdf_center.x - gloabl_sdf_extent.x, gloabl_sdf_center.y - gloabl_sdf_extent.y, gloabl_sdf_center.z - gloabl_sdf_extent.z);
+	gSimLumenGlobalResource.m_lumen_scene_info.scene_voxel_max_pos = DirectX::XMFLOAT3(gloabl_sdf_center.x + gloabl_sdf_extent.x, gloabl_sdf_center.y + gloabl_sdf_extent.y, gloabl_sdf_center.z + gloabl_sdf_extent.z);
+	gSimLumenGlobalResource.m_lumen_scene_info.voxel_size = gloabl_sdf_voxel_size * 2;
+	gSimLumenGlobalResource.m_lumen_scene_info.card_num_xy = GetGlobalResource().m_atlas_num_xy.x;
 
 	gSimLumenGlobalResource.scene_voxel_visibility_buffer.Create(L"scene_voxel_visibility_buffer", SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z, sizeof(SVoxelVisibilityInfo));
 }
