@@ -1,51 +1,23 @@
-struct VSInput
+#include "SimlumenCommon.hlsl"
+cbuffer SLumenGlobalConstants : register(b0)
 {
-    float3 position : POSITION;
-    float3 normal : NORMAL;
-    float2 uv : TEXCOORD0;
+    GLOBAL_VIEW_CONSTANT_BUFFER
 };
 
-struct VSOutput
+void vs_main(
+    in uint VertID : SV_VertexID,
+    out float2 Tex : TexCoord0,
+    out float4 Pos : SV_Position
+)
 {
-    float4 position : SV_POSITION;
-    float3 normal : NORMAL;
-    float2 uv : TEXCOORD0;
-    float3 worldPos : TEXCOORD1;
+    Tex = float2(uint2(VertID, VertID << 1) & 2);
+    Pos = float4(lerp(float2(-1, 1), float2(1, -1), Tex), 0, 1);
 };
 
-cbuffer SLumenMeshConstants : register(b0)
-{
-    float4x4 WorldMatrix;   // Object to world
-    float3x3 WorldIT;       // Object normal to world normal
-    float4 color_multi;
-};
-
-cbuffer SLumenGlobalConstants : register(b1)
-{
-    float4x4 ViewProjMatrix;
-    float3 CameraPos;
-    float3 SunDirection;
-    float3 SunIntensity;
-    float4x4 ShadowViewProjMatrix;
-}
-
-
-VSOutput vs_main(VSInput vsInput)
-{
-    VSOutput vsOutput;
-
-    float4 position = float4(vsInput.position, 1.0);
-    float3 normal = vsInput.normal;
-
-    vsOutput.worldPos = mul(WorldMatrix, position).xyz;
-    vsOutput.position = mul(ViewProjMatrix, float4(vsOutput.worldPos, 1.0));
-    vsOutput.normal = mul((float3x3)WorldMatrix, normal);
-    vsOutput.uv = vsInput.uv;
-    return vsOutput;
-}
-
-Texture2D<float4> baseColorTexture          : register(t0);
-SamplerState baseColorSampler               : register(s0);
+Texture2D<float4> GBufferA          : register(t0);
+Texture2D<float4> GBufferB          : register(t1);
+Texture2D<float> DepthBuffer        : register(t2);
+Texture2D<float> ShadowDepthBuffer        : register(t3);
 
 struct SurfaceProperties
 {
@@ -138,30 +110,48 @@ float3 ShadeDirectionalLight(SurfaceProperties Surface, float3 L, float3 c_light
     return Light.NdotL * c_light * (diffuse + specular);
 }
 
-
-float4 ps_main(VSOutput vsOutput) : SV_Target0
+float4 ps_main(in float2 Tex : TexCoord0, in float4 screen_pos : SV_Position) : SV_Target0
 {
-    float3 normal = vsOutput.normal;
-    float2 tex_uv = vsOutput.uv;
-    tex_uv.y = 1.0 - tex_uv.y;
-
-    float3 baseColor = baseColorTexture.Sample(baseColorSampler, tex_uv).xyz * color_multi.xyz;
-    float2 metallicRoughness = float2(0.5,0.5);
-
-    SurfaceProperties Surface;
-    Surface.N = normal;
-    Surface.V = normalize(CameraPos - vsOutput.worldPos);
-    Surface.NdotV = saturate(dot(Surface.N, Surface.V));
-    Surface.c_diff = baseColor.rgb * (1 - kDielectricSpecular) * (1 - metallicRoughness.x);
-    Surface.c_spec = lerp(kDielectricSpecular, baseColor.rgb, metallicRoughness.x);
-    Surface.roughness = metallicRoughness.y;
-    Surface.alpha = metallicRoughness.y * metallicRoughness.y;
-    Surface.alphaSqr = Surface.alpha * Surface.alpha;
-
+    uint2 pix_pos = screen_pos.xy;
+    float depth = DepthBuffer.Load(int3(pix_pos.xy,0)).x;
     float3 colorAccum = float3(0,0,0);
-    colorAccum += ShadeDirectionalLight(Surface, SunDirection, SunIntensity);
-    
-    colorAccum += (Surface.c_diff * 0.03);
+    if(depth != 0.0)
+    {
+        float3 baseColor = GBufferA.Load(int3(pix_pos.xy,0)).xyz;;
+        float3 normal = GBufferB.Load(int3(pix_pos.xy,0)).xyz * 2.0 - 1.0;
+
+        //https://www.jianshu.com/p/308eb5373670
+        float4 ndc = float4( Tex.xy * 2.0 - 1.0, depth, 1.0f );
+        ndc.y = (ndc.y * (-1.0));
+	    float4 wp = mul(InverseViewProjMatrix, ndc);
+	    float3 world_position =  wp.xyz / wp.w;
+
+        float shadow = 0.0;
+        {
+            float4 shadow_screen_pos = mul(ShadowViewProjMatrix, float4(world_position,1.0));
+            float2 shadow_uv = shadow_screen_pos.xy;
+            shadow_uv = shadow_uv * float2(0.5, -0.5) + float2(0.5, 0.5);
+            float2 shadow_pixel_pos = shadow_uv.xy * 2048;
+
+            float shadow_depth_value = ShadowDepthBuffer.Load(int3(shadow_pixel_pos.xy,0)).x;;
+            shadow = ((shadow_screen_pos.z + 0.0005) < shadow_depth_value ) ? 0.0 :1.0;
+        }
+
+        float2 metallicRoughness = float2(0.5,0.5);
+
+        SurfaceProperties Surface;
+        Surface.N = normal;
+        Surface.V = normalize(CameraPos - world_position);
+        Surface.NdotV = saturate(dot(Surface.N, Surface.V));
+        Surface.c_diff = baseColor.rgb * (1 - kDielectricSpecular) * (1 - metallicRoughness.x);
+        Surface.c_spec = lerp(kDielectricSpecular, baseColor.rgb, metallicRoughness.x);
+        Surface.roughness = metallicRoughness.y;
+        Surface.alpha = metallicRoughness.y * metallicRoughness.y;
+        Surface.alphaSqr = Surface.alpha * Surface.alpha;
+
+        colorAccum += ShadeDirectionalLight(Surface, SunDirection, SunIntensity) * shadow;
+        colorAccum += (Surface.c_diff * 0.03);
+    }
 
     return float4(colorAccum, 1.0);
 }

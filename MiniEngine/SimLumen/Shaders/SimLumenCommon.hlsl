@@ -11,6 +11,18 @@
 
 #define SCENE_SDF_NUM 13
 
+#define GLOBAL_VIEW_CONSTANT_BUFFER\
+    float4x4 ViewProjMatrix;\
+    float3 CameraPos;\
+    float view_padding0;\
+    float3 SunDirection;\
+    float view_padding1;\
+    float3 SunIntensity;\
+    float view_padding2;\
+    float4x4 ShadowViewProjMatrix;\
+    float4x4 InverseViewProjMatrix;\
+    
+
 struct STraceResult
 {
     bool is_hit;

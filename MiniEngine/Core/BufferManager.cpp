@@ -38,6 +38,9 @@ namespace Graphics
     ColorBuffer g_surface_cache_direct;
     ColorBuffer g_surface_cache_indirect;
     ColorBuffer g_surface_cache_final;
+
+    ColorBuffer g_GBufferA;
+    ColorBuffer g_GBufferB;
     //SimLumen:END
 
     ColorBuffer g_SSAOFullScreen(Color(1.0f, 1.0f, 1.0f));
@@ -132,6 +135,9 @@ void Graphics::InitializeRenderingBuffers( uint32_t bufferWidth, uint32_t buffer
         g_surface_cache_direct.Create(L"g_surface_cache_direct", 4096, 4096, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
         g_surface_cache_indirect.Create(L"g_surface_cache_indirect", 4096, 4096, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);
         g_surface_cache_final.Create(L"g_surface_cache_final", 4096, 4096, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
+
+        g_GBufferA.Create(L"g_GBufferA", bufferWidth, bufferHeight, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);
+        g_GBufferB.Create(L"g_GBufferB", bufferWidth, bufferHeight, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);
 
         esram.PushStack();	// Render HDR image
 

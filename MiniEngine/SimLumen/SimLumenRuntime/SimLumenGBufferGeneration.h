@@ -3,14 +3,13 @@
 #include "../SimLumenCommon/ShaderCompile.h"
 #include "SimLumenMeshInstance.h"
 #include "SimLumenGlobalResource.h"
-class CSimLumenShadow
+
+class CSimLumenGBufferGeneration
 {
 public:
 	void Init();
-	void RenderingShadowMap(GraphicsContext& gfxContext);
+	void Rendering(GraphicsContext& gfxContext);
 private:
-	ShadowCamera m_SunShadow;
-
-	RootSignature m_shadow_rendering_sig;
-	GraphicsPSO m_shadow_rendering_pso;
+	RootSignature m_gbuffer_gen_sig;
+	GraphicsPSO m_gbuffer_gen_pso;
 };

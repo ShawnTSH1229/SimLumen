@@ -5,7 +5,7 @@ class CSimLumenVisualization
 {
 public:
 	void Init();
-	void Render();
+	void Render(GraphicsContext& gfxContext);
 private:
 	void VisualizeMeshSDFs(GraphicsContext& gfxContext);
 	void VisualizeGloablSDFs(GraphicsContext& gfxContext);

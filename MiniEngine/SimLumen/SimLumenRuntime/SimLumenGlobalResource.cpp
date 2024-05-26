@@ -201,7 +201,7 @@ void InitGlobalResource()
 
 	gSimLumenGlobalResource.m_full_screen_uv_buffer.Create(L"m_full_screen_uv_buffer", 6, sizeof(XMFLOAT2), vtx_uv);
 
-	gSimLumenGlobalResource.m_LightDirection = Normalize(Math::Vector3(-1, 1, 1));
+	gSimLumenGlobalResource.m_LightDirection = Normalize(Math::Vector3(-1, 1, -1));
 	gSimLumenGlobalResource.m_atlas_size = Math::XMINT2(2048, 2048);
 	gSimLumenGlobalResource.m_atlas_num_xy = Math::XMINT2(2048 / 128, 2048 / 128);
 

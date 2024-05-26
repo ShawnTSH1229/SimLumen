@@ -17,6 +17,9 @@
 #include "SimLumenRuntime/SimLumenGlobalResource.h"
 #include "SimLumenRuntime/SimLumenVisualization.h"
 #include "SimLumenRuntime/SimLumenVoxelScene.h"
+#include "SimLumenRuntime/SimLumenShadow.h"
+#include "SimLumenRuntime/SimLumenGBufferGeneration.h"
+#include "SimLumenRuntime/SimLumenLightingPass.h"
 
 using namespace GameCore;
 using namespace Graphics;
@@ -40,7 +43,7 @@ private:
     Camera m_Camera;
     std::unique_ptr<CameraController> m_CameraController;
 
-
+    CSimLumenShadow  m_shadowpass;
 
     RootSignature m_BasePassRootSig;
    
@@ -50,6 +53,8 @@ private:
     CSimLuCardCapturer m_card_capturer;
     CSimLumenVisualization m_lumen_visualizer;
     CSimLumenVoxelScene m_lumen_vox_scene;
+    CSimLumenGBufferGeneration m_gbuffer_generation;
+    CSimLumenLightingPass m_lighting_pass;
 };
 
 CREATE_APPLICATION( SimLumen )
@@ -131,10 +136,12 @@ void SimLumen::Startup( void )
     m_CameraController.reset(new FlyingFPSCamera(m_Camera, Vector3(kYUnitVector)));
     m_card_capturer.Init();
     m_lumen_vox_scene.Init();
-
     InitGlobalResource();
 
     m_lumen_visualizer.Init();
+    m_shadowpass.Init();
+    m_gbuffer_generation.Init();
+    m_lighting_pass.Init();
 }
 
 namespace Graphics
@@ -164,85 +171,91 @@ void SimLumen::Update( float deltaT )
 
 void SimLumen::RenderScene( void )
 {
-    GraphicsContext& cbUpdateContext = GraphicsContext::Begin(L"update view constant buffer");
-
-    SLumenViewGlobalConstant globals;
-    globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
-    globals.CameraPos = m_Camera.GetPosition();
-    globals.SunDirection = GetGlobalResource().m_LightDirection;
-    globals.SunIntensity = Math::Vector3(1, 1, 1);
-    DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
-    memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
-    GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
-
-    SMeshSdfBrickTextureInfo global_sdf_info;
-    global_sdf_info.texture_brick_num_x = SDF_BRICK_NUM_XY;
-    global_sdf_info.texture_brick_num_y = SDF_BRICK_NUM_XY;
-
-    global_sdf_info.texture_size_x = SDF_BRICK_TEX_SIZE;
-    global_sdf_info.texture_size_y = SDF_BRICK_TEX_SIZE;
-    global_sdf_info.texture_size_z = g_brick_size;
-
-    global_sdf_info.scene_mesh_sdf_num = GetGlobalResource().m_mesh_instances.size();
-
-    global_sdf_info.gloabl_sdf_voxel_size = gloabl_sdf_voxel_size;
-    global_sdf_info.gloabl_sdf_center = gloabl_sdf_center;
-
-    global_sdf_info.global_sdf_extents = gloabl_sdf_extent;
-    global_sdf_info.global_sdf_scale_x = gloabl_sdf_scale_x;
-
-    global_sdf_info.global_sdf_tex_size_xyz = DirectX::XMFLOAT3(global_sdf_size_x, global_sdf_size_y, global_sdf_size_z);
-    global_sdf_info.global_sdf_scale_y = gloabl_sdf_scale_y;
-
-    DynAlloc gloabl_sdf = cbUpdateContext.ReserveUploadMemory(sizeof(SMeshSdfBrickTextureInfo));
-    memcpy(gloabl_sdf.DataPtr, &global_sdf_info, sizeof(SMeshSdfBrickTextureInfo));
-    GetGlobalResource().m_mesh_sdf_brick_tex_info = gloabl_sdf.GpuAddress;
-
-    cbUpdateContext.Finish();
-
-    m_card_capturer.UpdateSceneCards(GetGlobalResource().m_mesh_instances, &GetGlobalResource().s_TextureHeap);
-
-    m_lumen_vox_scene.UpdateVisibilityBuffer();
-
-    GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
-
-    gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
-    gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
-    gfxContext.ClearDepth(g_SceneDepthBuffer);
-    gfxContext.ClearColor(g_SceneColorBuffer);
-    
-    gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
-    gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
-
-    gfxContext.SetRootSignature(m_BasePassRootSig);
-    gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
-    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
-    gfxContext.SetPipelineState(m_BasePassPSO);
-    gfxContext.SetConstantBuffer(1, GetGlobalResource().m_global_view_constant_buffer);
-    gfxContext.FlushResourceBarriers();
-
-    for (int mesh_idx = 0; mesh_idx < GetGlobalResource().m_mesh_instances.size(); mesh_idx++)
     {
-        SLumenMeshInstance& lumen_mesh_instance = GetGlobalResource().m_mesh_instances[mesh_idx];
+        GraphicsContext& cbUpdateContext = GraphicsContext::Begin(L"update view constant buffer");
+        SLumenViewGlobalConstant globals;
+        globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
+        globals.CameraPos = m_Camera.GetPosition();
+        globals.SunDirection = GetGlobalResource().m_LightDirection;
+        globals.SunIntensity = Math::Vector3(1, 1, 1);
+        globals.ShadowViewProjMatrix = GetGlobalResource().m_shadow_vpmatrix;
+        globals.InverseViewProjMatrix = Math::Invert(globals.ViewProjMatrix);
+        DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
+        memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
+        GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
+        SMeshSdfBrickTextureInfo global_sdf_info;
+        global_sdf_info.texture_brick_num_x = SDF_BRICK_NUM_XY;
+        global_sdf_info.texture_brick_num_y = SDF_BRICK_NUM_XY;
 
-        DynAlloc mesh_consatnt = gfxContext.ReserveUploadMemory(sizeof(SLumenMeshConstant));
-        memcpy(mesh_consatnt.DataPtr, &lumen_mesh_instance.m_LumenConstant, sizeof(SLumenMeshConstant));
+        global_sdf_info.texture_size_x = SDF_BRICK_TEX_SIZE;
+        global_sdf_info.texture_size_y = SDF_BRICK_TEX_SIZE;
+        global_sdf_info.texture_size_z = g_brick_size;
 
-        gfxContext.SetConstantBuffer(0, mesh_consatnt.GpuAddress);
-        
-        gfxContext.SetDescriptorTable(2, GetGlobalResource().s_TextureHeap[lumen_mesh_instance.m_tex_table_idx]);
-        gfxContext.SetDescriptorTable(3, GetGlobalResource().s_SamplerHeap[lumen_mesh_instance.m_sampler_table_idx]);
+        global_sdf_info.scene_mesh_sdf_num = GetGlobalResource().m_mesh_instances.size();
 
-        gfxContext.SetVertexBuffer(0, lumen_mesh_instance.m_vertex_pos_buffer.VertexBufferView());
-        gfxContext.SetVertexBuffer(1, lumen_mesh_instance.m_vertex_norm_buffer.VertexBufferView());
-        gfxContext.SetVertexBuffer(2, lumen_mesh_instance.m_vertex_uv_buffer.VertexBufferView());
-        gfxContext.SetIndexBuffer(lumen_mesh_instance.m_index_buffer.IndexBufferView());
-        
-        gfxContext.DrawIndexed(lumen_mesh_instance.m_mesh_resource.m_indices.size());
+        global_sdf_info.gloabl_sdf_voxel_size = gloabl_sdf_voxel_size;
+        global_sdf_info.gloabl_sdf_center = gloabl_sdf_center;
+
+        global_sdf_info.global_sdf_extents = gloabl_sdf_extent;
+        global_sdf_info.global_sdf_scale_x = gloabl_sdf_scale_x;
+
+        global_sdf_info.global_sdf_tex_size_xyz = DirectX::XMFLOAT3(global_sdf_size_x, global_sdf_size_y, global_sdf_size_z);
+        global_sdf_info.global_sdf_scale_y = gloabl_sdf_scale_y;
+
+        DynAlloc gloabl_sdf = cbUpdateContext.ReserveUploadMemory(sizeof(SMeshSdfBrickTextureInfo));
+        memcpy(gloabl_sdf.DataPtr, &global_sdf_info, sizeof(SMeshSdfBrickTextureInfo));
+        GetGlobalResource().m_mesh_sdf_brick_tex_info = gloabl_sdf.GpuAddress;
+        cbUpdateContext.Finish();
     }
 
-    gfxContext.Finish();
+    //m_lumen_vox_scene.UpdateVisibilityBuffer();
 
-    m_lumen_visualizer.Render();
+    GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
+    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
+    gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
+
+    m_card_capturer.UpdateSceneCards(gfxContext);
+    m_shadowpass.RenderingShadowMap(gfxContext);
+    m_gbuffer_generation.Rendering(gfxContext);
+
+    //gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+    //gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+    //gfxContext.ClearDepth(g_SceneDepthBuffer);
+    //gfxContext.ClearColor(g_SceneColorBuffer);
+    //
+    //gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
+    //gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
+    //
+    //gfxContext.SetRootSignature(m_BasePassRootSig);
+    //gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //
+    //gfxContext.SetPipelineState(m_BasePassPSO);
+    //gfxContext.SetConstantBuffer(1, GetGlobalResource().m_global_view_constant_buffer);
+    //gfxContext.FlushResourceBarriers();
+    //
+    //gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
+    //gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
+    //for (int mesh_idx = 0; mesh_idx < GetGlobalResource().m_mesh_instances.size(); mesh_idx++)
+    //{
+    //    SLumenMeshInstance& lumen_mesh_instance = GetGlobalResource().m_mesh_instances[mesh_idx];
+    //
+    //    DynAlloc mesh_consatnt = gfxContext.ReserveUploadMemory(sizeof(SLumenMeshConstant));
+    //    memcpy(mesh_consatnt.DataPtr, &lumen_mesh_instance.m_LumenConstant, sizeof(SLumenMeshConstant));
+    //
+    //    gfxContext.SetConstantBuffer(0, mesh_consatnt.GpuAddress);
+    //    
+    //    gfxContext.SetDescriptorTable(2, GetGlobalResource().s_TextureHeap[lumen_mesh_instance.m_tex_table_idx]);
+    //    gfxContext.SetDescriptorTable(3, GetGlobalResource().s_SamplerHeap[lumen_mesh_instance.m_sampler_table_idx]);
+    //
+    //    gfxContext.SetVertexBuffer(0, lumen_mesh_instance.m_vertex_pos_buffer.VertexBufferView());
+    //    gfxContext.SetVertexBuffer(1, lumen_mesh_instance.m_vertex_norm_buffer.VertexBufferView());
+    //    gfxContext.SetVertexBuffer(2, lumen_mesh_instance.m_vertex_uv_buffer.VertexBufferView());
+    //    gfxContext.SetIndexBuffer(lumen_mesh_instance.m_index_buffer.IndexBufferView());
+    //    
+    //    gfxContext.DrawIndexed(lumen_mesh_instance.m_mesh_resource.m_indices.size());
+    //}
+
+    m_lighting_pass.Rendering(gfxContext);
+    m_lumen_visualizer.Render(gfxContext);
+    gfxContext.Finish();
 }

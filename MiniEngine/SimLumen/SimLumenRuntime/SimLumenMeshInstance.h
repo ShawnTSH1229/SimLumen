@@ -31,6 +31,8 @@ __declspec(align(256)) struct SLumenViewGlobalConstant
 	Math::Vector3 CameraPos;
 	Math::Vector3 SunDirection;
 	Math::Vector3 SunIntensity;
+	Math::Matrix4 ShadowViewProjMatrix;
+	Math::Matrix4 InverseViewProjMatrix;
 };
 
 __declspec(align(256)) struct SLumenMeshConstant

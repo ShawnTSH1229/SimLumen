@@ -34,7 +34,7 @@ class CSimLuCardCapturer
 {
 public:
 	void Init();
-	void UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_instances, DescriptorHeap* desc_heap);
+	void UpdateSceneCards(GraphicsContext& gfxContext);
 private:
 	void CreatePSO();
 

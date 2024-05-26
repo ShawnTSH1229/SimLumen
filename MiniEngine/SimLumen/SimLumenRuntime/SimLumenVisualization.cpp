@@ -132,10 +132,8 @@ void CSimLumenVisualization::Init()
 }
 
 
-void CSimLumenVisualization::Render()
+void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
 {
-	GraphicsContext& gfxContext = GraphicsContext::Begin(L"Visualize Pass");
-	
 	if (GetGlobalResource().m_visualize_type == 1)
 	{
 		VisualizeMeshSDFs(gfxContext);
@@ -144,8 +142,6 @@ void CSimLumenVisualization::Render()
 	{
 		VisualizeGloablSDFs(gfxContext);
 	}
-	
-	gfxContext.Finish();
 }
 
 void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
@@ -161,8 +157,8 @@ void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
 	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gfxContext.SetPipelineState(m_vis_sdf_pso);
 
-	gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
-	gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
+	//gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
+	//gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
 
 	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
 	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);
@@ -190,8 +186,8 @@ void CSimLumenVisualization::VisualizeGloablSDFs(GraphicsContext& gfxContext)
 	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gfxContext.SetPipelineState(m_vis_global_sdf_pso);
 
-	gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
-	gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
+	//gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, GetGlobalResource().s_TextureHeap.GetHeapPointer());
+	//gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, GetGlobalResource().s_SamplerHeap.GetHeapPointer());
 
 	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
 	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);

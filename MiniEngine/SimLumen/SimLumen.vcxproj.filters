@@ -39,9 +39,6 @@
     <ClCompile Include="SimLumenRuntime\SimLumenMeshInstance.cpp">
       <Filter>Source Files\Runtime</Filter>
     </ClCompile>
-    <ClCompile Include="SimLumenRuntime\Shadow.cpp">
-      <Filter>Source Files\Runtime</Filter>
-    </ClCompile>
     <ClCompile Include="SimLumenRuntime\SimLumenCardCapture.cpp">
       <Filter>Source Files\Runtime</Filter>
     </ClCompile>
@@ -67,6 +64,15 @@
       <Filter>Source Files\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="SimLumenRuntime\SimLumenVoxelScene.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenShadow.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenGBufferGeneration.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenLightingPass.cpp">
       <Filter>Source Files\Runtime</Filter>
     </ClCompile>
   </ItemGroup>
@@ -114,9 +120,6 @@
     <ClInclude Include="SimLumenRuntime\SimLumenMeshInstance.h">
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
-    <ClInclude Include="SimLumenRuntime\Shadow.h">
-      <Filter>Source Files\Runtime</Filter>
-    </ClInclude>
     <ClInclude Include="SimLumenRuntime\SimLumenCardCapture.h">
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
@@ -139,6 +142,15 @@
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="SimLumenRuntime\SimLumenVoxelScene.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenShadow.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenGBufferGeneration.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenLightingPass.h">
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
   </ItemGroup>

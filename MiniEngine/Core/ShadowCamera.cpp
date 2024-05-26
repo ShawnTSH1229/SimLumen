@@ -20,7 +20,7 @@ void ShadowCamera::UpdateMatrix(
     Vector3 LightDirection, Vector3 ShadowCenter, Vector3 ShadowBounds,
     uint32_t BufferWidth, uint32_t BufferHeight, uint32_t BufferPrecision )
 {
-    SetLookDirection( LightDirection, Vector3(kZUnitVector) );
+    SetLookDirection( LightDirection, Vector3(kYUnitVector) );
 
     // Converts world units to texel units so we can quantize the camera position to whole texel units
     Vector3 RcpDimensions = Recip(ShadowBounds);

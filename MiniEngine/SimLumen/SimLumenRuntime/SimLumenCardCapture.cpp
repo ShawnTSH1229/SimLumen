@@ -10,12 +10,11 @@ void CSimLuCardCapturer::Init()
     m_gen_cards = true;
 }
 
-void CSimLuCardCapturer::UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_instances, DescriptorHeap* desc_heap)
+void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
 {
     if (m_need_updata_cards)
     {
-        GraphicsContext& gfxContext = GraphicsContext::Begin(L"Card Capture");
-
+        std::vector<SLumenMeshInstance>& mesh_instances = GetGlobalResource().m_mesh_instances;
         if (m_gen_cards)
         {
             temp_cards.resize(mesh_instances.size() * 6);
@@ -49,7 +48,6 @@ void CSimLuCardCapturer::UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_
             }
 
             gfxContext.SetViewportAndScissor(0, 0, 128, 128);
-            gfxContext.SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, desc_heap->GetHeapPointer());
             gfxContext.SetRootSignature(m_card_capture_root_sig);
             gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
             gfxContext.SetPipelineState(m_card_capture_pso);
@@ -104,7 +102,7 @@ void CSimLuCardCapturer::UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_
 
                     D3D12_CPU_DESCRIPTOR_HANDLE rtvs[2] = { temp_cards[idx * 6 + dir].m_temp_card_albedo.GetRTV(),temp_cards[idx * 6 + dir].m_temp_card_normal.GetRTV() };
                     gfxContext.SetRenderTargets(2, rtvs, temp_cards[idx * 6 + dir].m_temp_card_depth.GetDSV());
-                    gfxContext.SetDescriptorTable(2, (*desc_heap)[lumen_mesh_instance.m_tex_table_idx]);
+                    gfxContext.SetDescriptorTable(2, GetGlobalResource().s_TextureHeap[lumen_mesh_instance.m_tex_table_idx]);
                     gfxContext.SetVertexBuffer(0, lumen_mesh_instance.m_vertex_pos_buffer.VertexBufferView());
                     gfxContext.SetVertexBuffer(1, lumen_mesh_instance.m_vertex_norm_buffer.VertexBufferView());
                     gfxContext.SetVertexBuffer(2, lumen_mesh_instance.m_vertex_uv_buffer.VertexBufferView());
@@ -154,15 +152,11 @@ void CSimLuCardCapturer::UpdateSceneCards(std::vector<SLumenMeshInstance>& mesh_
                 Math::Vector4 dest_atlas_index_and_scale(dest_x, dest_y, 128.0 / 2048, 128.0 / 2048);
                 memcpy(card_copy_constant.DataPtr, &dest_atlas_index_and_scale, sizeof(SCardCopyConstant));
                 gfxContext.SetConstantBuffer(0, card_copy_constant.GpuAddress);
-
                 gfxContext.Draw(6);
             }
         }
-
-        gfxContext.Finish();
         m_need_updata_cards = false;
     }
- 
 }
 
 void CSimLuCardCapturer::CreatePSO()

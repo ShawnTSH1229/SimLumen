@@ -78,7 +78,7 @@ static void CreateBox(CSimLumenMeshResouce& cube,float x, float y, float z)
 		cube.m_normals[idx] = DirectX::XMFLOAT3(0, -1, 0);
 	}
 
-	// front plane
+	// back plane
 	cube.m_positions[16] = DirectX::XMFLOAT3(-half_x, half_y, -half_z);
 	cube.m_positions[17] = DirectX::XMFLOAT3(half_x, half_y, -half_z);
 	cube.m_positions[18] = DirectX::XMFLOAT3(half_x, -half_y, -half_z);
@@ -86,10 +86,10 @@ static void CreateBox(CSimLumenMeshResouce& cube,float x, float y, float z)
 
 	for (int idx = 16; idx < 20; idx++)
 	{
-		cube.m_normals[idx] = DirectX::XMFLOAT3(0, 0, 1);
+		cube.m_normals[idx] = DirectX::XMFLOAT3(0, 0, -1);
 	}
 
-	// back plane
+	// front plane
 	cube.m_positions[20] = DirectX::XMFLOAT3(half_x, half_y, half_z);
 	cube.m_positions[21] = DirectX::XMFLOAT3(-half_x, half_y, half_z);
 	cube.m_positions[22] = DirectX::XMFLOAT3(-half_x, -half_y, half_z);
@@ -97,7 +97,7 @@ static void CreateBox(CSimLumenMeshResouce& cube,float x, float y, float z)
 
 	for (int idx = 20; idx < 24; idx++)
 	{
-		cube.m_normals[idx] = DirectX::XMFLOAT3(0, 0, -1);
+		cube.m_normals[idx] = DirectX::XMFLOAT3(0, 0, 1);
 	}
 }
 

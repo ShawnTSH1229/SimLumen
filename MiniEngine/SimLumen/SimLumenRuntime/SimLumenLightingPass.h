@@ -3,14 +3,13 @@
 #include "../SimLumenCommon/ShaderCompile.h"
 #include "SimLumenMeshInstance.h"
 #include "SimLumenGlobalResource.h"
-class CSimLumenShadow
+
+class CSimLumenLightingPass
 {
 public:
 	void Init();
-	void RenderingShadowMap(GraphicsContext& gfxContext);
+	void Rendering(GraphicsContext& gfxContext);
 private:
-	ShadowCamera m_SunShadow;
-
-	RootSignature m_shadow_rendering_sig;
-	GraphicsPSO m_shadow_rendering_pso;
+	RootSignature m_lighting_sig;
+	GraphicsPSO m_lighting_pso;
 };

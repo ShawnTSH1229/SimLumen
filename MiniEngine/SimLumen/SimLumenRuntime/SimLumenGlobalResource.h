@@ -10,6 +10,8 @@
 #define SCENE_VOXEL_SIZE_Y 48
 #define SCENE_VOXEL_SIZE_Z 160
 
+#define SIMLUMEN_SHADOW_DIMENSION 384
+
 struct SMeshSDFInfo
 {
 	Math::Matrix4 volume_to_world;
@@ -114,6 +116,8 @@ struct SSimLumenGlobalResource
 	Math::XMINT2 m_atlas_num_xy;
 
 	StructuredBuffer scene_voxel_visibility_buffer;
+
+	Math::Matrix4 m_shadow_vpmatrix;
 
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal
