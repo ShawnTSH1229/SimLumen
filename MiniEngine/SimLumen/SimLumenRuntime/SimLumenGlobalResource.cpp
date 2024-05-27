@@ -186,6 +186,7 @@ void InitGlobalResource()
 	gSimLumenGlobalResource.m_lumen_scene_info.scene_voxel_max_pos = DirectX::XMFLOAT3(gloabl_sdf_center.x + gloabl_sdf_extent.x, gloabl_sdf_center.y + gloabl_sdf_extent.y, gloabl_sdf_center.z + gloabl_sdf_extent.z);
 	gSimLumenGlobalResource.m_lumen_scene_info.voxel_size = gloabl_sdf_voxel_size * 2;
 	gSimLumenGlobalResource.m_lumen_scene_info.card_num_xy = GetGlobalResource().m_atlas_num_xy.x;
+	gSimLumenGlobalResource.m_lumen_scene_info.scene_card_num = GetGlobalResource().m_scene_card_info.size();
 
 	gSimLumenGlobalResource.scene_voxel_visibility_buffer.Create(L"scene_voxel_visibility_buffer", SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z, sizeof(SVoxelVisibilityInfo));
 }

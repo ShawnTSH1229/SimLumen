@@ -10,11 +10,13 @@ void CSimLuCardCapturer::Init()
     m_gen_cards = true;
 }
 
-void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
+void CSimLuCardCapturer::UpdateSceneCards()
 {
-    EngineProfiling::BeginBlock(L"UpdateSceneCards");
+    
     //if (m_need_updata_cards)
     {
+        GraphicsContext& gfxContext = GraphicsContext::Begin(L"UpdateSceneCards");
+
         std::vector<SLumenMeshInstance>& mesh_instances = GetGlobalResource().m_mesh_instances;
         if (m_gen_cards)
         {
@@ -54,7 +56,8 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
             gfxContext.SetPipelineState(m_card_capture_pso);
 
             Vector3 light_direction_neg[6] = { Vector3(0,0,-1),Vector3(0,0,1), Vector3(0,-1,0), Vector3(0,1,0), Vector3(-1,0,0), Vector3(1,0,0) };
-            Vector3 up_directions[6] = { Vector3(0,1,0),Vector3(0,1,0), Vector3(0,0,-1), Vector3(0,0,+1), Vector3(0,+1,0), Vector3(0,+1,0) , fixbug};
+            //Vector3 up_directions[6] = { Vector3(0,1,0),Vector3(0,1,0), Vector3(0,0,-1), Vector3(0,0,+1), Vector3(0,+1,0), Vector3(0,-1,0) };
+            Vector3 up_directions[6] = { Vector3(0,1,0),Vector3(0,1,0), Vector3(0,0,-1), Vector3(0,0,+1), Vector3(0,+1,0), Vector3(0,+1,0)};
 
             for (int idx = 0; idx < mesh_instances.size(); idx++)
             {
@@ -74,7 +77,12 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
                         // 2 / 3 -> 1 ->  1
                         // 4 / 5 -> 2 ->  0
 
-                        int dimension = 2 - dir / 2;
+                        static const int xyz_dimension[9] =
+                        {
+                            0,1,2,
+                            0,2,1,
+                            2,1,0,
+                        };
 
                         SLumenMeshCards& mesh_card = mesh_resouce.m_cards[dir];
                         Math::BoundingBox& bound_box = mesh_card.m_local_boundbox;
@@ -82,10 +90,10 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
                         Vector3 bound_center = bound_box.Center;
 
                         XMMATRIX proj_matrix = XMMatrixOrthographicRH(
-                            GetFloatComponent(bound_box.Extents, (dimension + 1) % 3) * 2,
-                            GetFloatComponent(bound_box.Extents, (dimension + 2) % 3) * 2,
+                            GetFloatComponent(bound_box.Extents, xyz_dimension[dir / 2 * 3 + 0]) * 2,
+                            GetFloatComponent(bound_box.Extents, xyz_dimension[dir / 2 * 3 + 1]) * 2,
                             0,
-                            GetFloatComponent(bound_box.Extents, dimension) * 2);
+                            GetFloatComponent(bound_box.Extents, xyz_dimension[dir / 2 * 3 + 2]) * 2);
 
                         m_card_camera.SetEyeAtUp(bound_center - (bound_extent + Vector3(1e-5, 1e-5, 1e-5)) * light_direction_neg[dir], bound_center, up_directions[dir]);
                         m_card_camera.SetProjMatrix(Matrix4(proj_matrix));
@@ -154,8 +162,8 @@ void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
             }
         }
         m_need_updata_cards = false;
+        gfxContext.Finish();
     }
-    EngineProfiling::EndBlock();
 }
 
 void CSimLuCardCapturer::CreatePSO()

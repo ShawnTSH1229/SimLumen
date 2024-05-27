@@ -113,6 +113,9 @@ void SimLumen::Cleanup( void )
     // Free up resources in an orderly fashion
 }
 
+#define VIS_KEY_PRESS(x)\
+if (GameInput::IsFirstPressed(GameInput::kKey_##x)) { GetGlobalResource().m_visualize_type = x; };
+
 void SimLumen::Update( float deltaT )
 {
     ScopedTimer _prof(L"Update State");
@@ -124,8 +127,16 @@ void SimLumen::Update( float deltaT )
 
     m_CameraController->Update(deltaT);
 
-    if (GameInput::IsFirstPressed(GameInput::kKey_1)) { GetGlobalResource().m_visualize_type = 1; };
-    if (GameInput::IsFirstPressed(GameInput::kKey_2)) { GetGlobalResource().m_visualize_type = 2; };
+    VIS_KEY_PRESS(0);
+    VIS_KEY_PRESS(1);
+    VIS_KEY_PRESS(2);
+    VIS_KEY_PRESS(3);
+    VIS_KEY_PRESS(4);
+    VIS_KEY_PRESS(5);
+    VIS_KEY_PRESS(6);
+    VIS_KEY_PRESS(7);
+    VIS_KEY_PRESS(8);
+    VIS_KEY_PRESS(9);
 }
 
 void SimLumen::RenderScene( void )
@@ -133,8 +144,9 @@ void SimLumen::RenderScene( void )
     GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
     UpdateConstantBuffer(gfxContext);
     m_lumen_vox_scene.UpdateVisibilityBuffer();
-    m_card_capturer.UpdateSceneCards(gfxContext);
-    m_lumen_surface_cache.Rendering();
+    m_card_capturer.UpdateSceneCards();
+    m_lumen_surface_cache.SurfaceCacheDirectLighting();
+    m_lumen_surface_cache.SurfaceCacheCombineLighting();
     m_shadowpass.RenderingShadowMap(gfxContext);
     m_gbuffer_generation.Rendering(gfxContext);
     m_lighting_pass.Rendering(gfxContext);
@@ -153,6 +165,8 @@ void SimLumen::UpdateConstantBuffer(GraphicsContext& cbUpdateContext)
     globals.SunIntensity = Math::Vector3(1, 1, 1);
     globals.ShadowViewProjMatrix = GetGlobalResource().m_shadow_vpmatrix;
     globals.InverseViewProjMatrix = Math::Invert(globals.ViewProjMatrix);
+    globals.PointLightWorldPos = DirectX::XMFLOAT3(-20, 32, -50);
+    globals.PointLightRadius = 20.0f;
     DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
     memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
     GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;

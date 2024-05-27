@@ -9,7 +9,12 @@ public:
 private:
 	void VisualizeMeshSDFs(GraphicsContext& gfxContext);
 	void VisualizeGloablSDFs(GraphicsContext& gfxContext);
+	void VisualizeSurfaceCache(GraphicsContext& gfxContext);
+
+	void InitSurfaceCachePSO();
+	void InitSDFVisPSO();
 	void InitSDFVisBuffer();
+	void InitSurfaceCacheVisBuffer();
 
 	ByteAddressBuffer m_sdf_vis_pos_buffer;
 	ByteAddressBuffer m_sdf_vis_direction_buffer;
@@ -26,4 +31,11 @@ private:
 	// visualize global sdf
 	RootSignature m_vis_global_sdf_sig;
 	GraphicsPSO m_vis_global_sdf_pso;
+
+	// 
+	ByteAddressBuffer m_scache_vis_pos_buffer;
+	ByteAddressBuffer m_scache_vis_uv_buffer;
+	ByteAddressBuffer m_scache_vis_index_buffer;
+	RootSignature m_vis_scache_sig;
+	GraphicsPSO m_vis_scache_pso;
 };

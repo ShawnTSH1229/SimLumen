@@ -149,7 +149,19 @@ float4 ps_main(in float2 Tex : TexCoord0, in float4 screen_pos : SV_Position) : 
         Surface.alpha = metallicRoughness.y * metallicRoughness.y;
         Surface.alphaSqr = Surface.alpha * Surface.alpha;
 
-        colorAccum += ShadeDirectionalLight(Surface, SunDirection, SunIntensity) * shadow;
+        // directional light
+        {
+            colorAccum += ShadeDirectionalLight(Surface, SunDirection, SunIntensity) * shadow;
+        }
+
+        // point light
+        {
+            float3 point_light_direction = point_light_world_pos - world_position;
+            float3 light_dist = length(point_light_direction);
+            float attenuation = saturate((point_light_radius - light_dist) / point_light_radius);
+            colorAccum += ShadeDirectionalLight(Surface, normalize(point_light_direction), float3(1,1,1)) * attenuation * attenuation;
+        }
+
         colorAccum += (Surface.c_diff * 0.03);
     }
 

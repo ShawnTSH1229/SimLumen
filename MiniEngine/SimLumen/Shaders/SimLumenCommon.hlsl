@@ -10,6 +10,7 @@
 #define SCENE_VOXEL_SIZE_Z 160
 
 #define SCENE_SDF_NUM 13
+#define SURFACE_CACHE_TEX_SIZE 2048
 
 #define GLOBAL_VIEW_CONSTANT_BUFFER\
     float4x4 ViewProjMatrix;\
@@ -21,6 +22,8 @@
     float view_padding2;\
     float4x4 ShadowViewProjMatrix;\
     float4x4 InverseViewProjMatrix;\
+    float3 point_light_world_pos;\
+    float point_light_radius;\
     
 #define GLOBAL_LUMEN_SCENE_INFO\
     float3 scene_voxel_min_pos;\

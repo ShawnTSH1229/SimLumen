@@ -132,6 +132,9 @@ struct SSimLumenGlobalResource
 
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal
+	// 3: visualize surface cache albedo
+	// 4: visualize surface cache normal
+	// 5: visualize  surface cache direct lighting
 	int m_visualize_type;
 };
 

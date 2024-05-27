@@ -8,8 +8,13 @@ class CSimLumenSurfaceCache
 {
 public:
 	void Init();
-	void Rendering();
+	void SurfaceCacheDirectLighting();
+	void SurfaceCacheCombineLighting();
+	void SurfaceCacheInjectLighting();
 private:
 	RootSignature m_surface_cache_direct_light_sig;
 	ComputePSO m_surface_cache_direct_light_pso;
+
+	RootSignature m_scache_combine_light_sig;
+	ComputePSO m_scache_combine_light_pso;
 };

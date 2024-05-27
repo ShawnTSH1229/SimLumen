@@ -81,9 +81,8 @@ void CSimLumenMeshBuilder::BuildMeshCard(CSimLumenMeshResouce& mesh)
 	cards_bounds[2] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,+1,+1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,+1,-1,0 }), XMFLOAT3(0, -1, 0), 0, 2, 1);
 	cards_bounds[3] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ -1,-1,+1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,-1,-1,0 }), XMFLOAT3(0, +1, 0), 0, 2, 1);
 
-	fixbug;
-	ComputeRotateBoundAndMatrix(cards_bounds[2], cards_rotated_bounds[2], rotate_back[2], Vector3(1, 0, 0), Math::XM_PIDIV2);
-	ComputeRotateBoundAndMatrix(cards_bounds[3], cards_rotated_bounds[3], rotate_back[3], Vector3(1, 0, 0), -Math::XM_PIDIV2);
+	ComputeRotateBoundAndMatrix(cards_bounds[2], cards_rotated_bounds[2], rotate_back[2], Vector3(1, 0, 0), -Math::XM_PIDIV2);
+	ComputeRotateBoundAndMatrix(cards_bounds[3], cards_rotated_bounds[3], rotate_back[3], Vector3(1, 0, 0), Math::XM_PIDIV2);
 	
 	// y z plane
 	cards_bounds[4] = ComputeMeshCard(GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,-1,-1,0 }), GetBouingBoxCorner(mesh.m_BoundingBox, XMVECTORF32{ +1,+1,+1,0 }), XMFLOAT3(-1, 0, 0), 1, 2, 0);

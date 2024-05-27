@@ -62,7 +62,162 @@ static void CreateSDFVisBox(std::vector<Math::Vector3>& positions, std::vector<u
 void CSimLumenVisualization::Init()
 {
 	InitSDFVisBuffer();
+	InitSurfaceCacheVisBuffer();
+	InitSDFVisPSO();
+	InitSurfaceCachePSO();
+}
 
+
+void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
+{
+	EngineProfiling::BeginBlock(L"CSimLumenVisualization");
+	if (GetGlobalResource().m_visualize_type == 1)
+	{
+		VisualizeMeshSDFs(gfxContext);
+	}
+	else if (GetGlobalResource().m_visualize_type == 2)
+	{
+		VisualizeGloablSDFs(gfxContext);
+	}
+	else if (GetGlobalResource().m_visualize_type >= 3 && GetGlobalResource().m_visualize_type <= 5)
+	{
+		VisualizeSurfaceCache(gfxContext);
+	}
+	EngineProfiling::EndBlock();
+}
+
+void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
+{
+	gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+	gfxContext.FlushResourceBarriers();
+
+	gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
+	gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
+
+	gfxContext.SetRootSignature(m_vis_sdf_sig);
+	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gfxContext.SetPipelineState(m_vis_sdf_pso);
+
+	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
+	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);
+	gfxContext.SetDynamicDescriptor(2, 0, m_sdf_instance_buffer.GetSRV());
+	gfxContext.SetDynamicDescriptor(2, 1, GetGlobalResource().m_scene_sdf_infos_gpu.GetSRV());
+	gfxContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
+	gfxContext.SetDynamicSampler(4, 0, SamplerPointClamp);
+	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
+	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());
+	gfxContext.SetIndexBuffer(m_sdf_vis_index_buffer.IndexBufferView());
+	gfxContext.DrawIndexedInstanced(m_index_count_perinstance, m_instance_num, 0, 0, 0);
+}
+
+void CSimLumenVisualization::VisualizeGloablSDFs(GraphicsContext& gfxContext)
+{
+	gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+	gfxContext.FlushResourceBarriers();
+
+	gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
+	gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
+
+	gfxContext.SetRootSignature(m_vis_global_sdf_sig);
+	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gfxContext.SetPipelineState(m_vis_global_sdf_pso);
+
+	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
+	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);
+	gfxContext.SetDynamicDescriptor(2, 0, m_sdf_instance_buffer.GetSRV());
+	gfxContext.SetDynamicDescriptor(2, 1, GetGlobalResource().m_scene_sdf_infos_gpu.GetSRV());
+	gfxContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
+	gfxContext.SetDynamicSampler(4, 0, SamplerPointClamp);
+	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
+	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());
+	gfxContext.SetIndexBuffer(m_sdf_vis_index_buffer.IndexBufferView());
+	gfxContext.DrawIndexedInstanced(m_index_count_perinstance, m_instance_num, 0, 0, 0);
+}
+
+void CSimLumenVisualization::VisualizeSurfaceCache(GraphicsContext& gfxContext)
+{
+	gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, false);
+	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
+	gfxContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gfxContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gfxContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gfxContext.FlushResourceBarriers();
+	gfxContext.ClearColor(g_SceneColorBuffer);
+	gfxContext.ClearDepth(g_SceneDepthBuffer);
+
+	gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
+	gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
+
+	gfxContext.SetRootSignature(m_vis_scache_sig);
+	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gfxContext.SetPipelineState(m_vis_scache_pso);
+
+	gfxContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
+	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_global_view_constant_buffer);
+	gfxContext.SetDynamicDescriptor(2, 0, GetGlobalResource().m_scene_card_infos_gpu.GetSRV());
+	
+	if (GetGlobalResource().m_visualize_type == 3)
+	{
+		gfxContext.SetDynamicDescriptor(2, 1, g_atlas_albedo.GetSRV());
+	}
+	else if (GetGlobalResource().m_visualize_type == 4)
+	{
+		gfxContext.SetDynamicDescriptor(2, 1, g_atlas_normal.GetSRV());
+	}
+	else if (GetGlobalResource().m_visualize_type == 5)
+	{
+		gfxContext.SetDynamicDescriptor(2, 1, g_surface_cache_direct.GetSRV());
+	}
+	
+	gfxContext.SetVertexBuffer(0, m_scache_vis_pos_buffer.VertexBufferView());
+	gfxContext.SetVertexBuffer(1, m_scache_vis_uv_buffer.VertexBufferView());
+	gfxContext.SetIndexBuffer(m_scache_vis_index_buffer.IndexBufferView());
+	gfxContext.DrawIndexedInstanced(6, GetGlobalResource().m_scene_card_info.size(), 0, 0, 0);
+}
+
+void CSimLumenVisualization::InitSurfaceCachePSO()
+{
+	D3D12_INPUT_ELEMENT_DESC pos_uv[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	};
+
+	DXGI_FORMAT ColorFormat = g_SceneColorBuffer.GetFormat();
+	DXGI_FORMAT DepthFormat = g_SceneDepthBuffer.GetFormat();
+
+	// visualize mesh sdf root signature
+	{
+		m_vis_scache_sig.Reset(3, 0);
+		m_vis_scache_sig[0].InitAsConstantBuffer(0);
+		m_vis_scache_sig[1].InitAsConstantBuffer(1);
+		m_vis_scache_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2);
+		m_vis_scache_sig.Finalize(L"m_vis_scache_sig", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	}
+
+	// visualize mesh sdf pso
+	{
+		std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenVisualizeSurfaceCache.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
+		std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenVisualizeSurfaceCache.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
+
+		m_vis_scache_pso = GraphicsPSO(L"m_vis_scache_pso");
+		m_vis_scache_pso.SetRootSignature(m_vis_scache_sig);
+		m_vis_scache_pso.SetRasterizerState(RasterizerTwoSided);
+		m_vis_scache_pso.SetBlendState(BlendDisable);
+		m_vis_scache_pso.SetDepthStencilState(DepthStateReadWrite);
+		m_vis_scache_pso.SetInputLayout(_countof(pos_uv), pos_uv);
+		m_vis_scache_pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+		m_vis_scache_pso.SetRenderTargetFormats(1, &ColorFormat, DepthFormat);
+		m_vis_scache_pso.SetVertexShader(p_vs_shader_code->GetBufferPointer(), p_vs_shader_code->GetBufferSize());
+		m_vis_scache_pso.SetPixelShader(p_ps_shader_code->GetBufferPointer(), p_ps_shader_code->GetBufferSize());
+		m_vis_scache_pso.Finalize();
+	}
+}
+
+void CSimLumenVisualization::InitSDFVisPSO()
+{
 	D3D12_INPUT_ELEMENT_DESC pos_norm_uv[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -131,71 +286,6 @@ void CSimLumenVisualization::Init()
 	}
 }
 
-
-void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
-{
-	EngineProfiling::BeginBlock(L"CSimLumenVisualization");
-	if (GetGlobalResource().m_visualize_type == 1)
-	{
-		VisualizeMeshSDFs(gfxContext);
-	}
-	else if (GetGlobalResource().m_visualize_type == 2)
-	{
-		VisualizeGloablSDFs(gfxContext);
-	}
-	EngineProfiling::EndBlock();
-}
-
-void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
-{
-	gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
-	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
-	gfxContext.FlushResourceBarriers();
-
-	gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
-	gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
-
-	gfxContext.SetRootSignature(m_vis_sdf_sig);
-	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	gfxContext.SetPipelineState(m_vis_sdf_pso);
-
-	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
-	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);
-	gfxContext.SetDynamicDescriptor(2, 0, m_sdf_instance_buffer.GetSRV());
-	gfxContext.SetDynamicDescriptor(2, 1, GetGlobalResource().m_scene_sdf_infos_gpu.GetSRV());
-	gfxContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
-	gfxContext.SetDynamicSampler(4, 0, SamplerPointClamp);
-	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
-	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());
-	gfxContext.SetIndexBuffer(m_sdf_vis_index_buffer.IndexBufferView());
-	gfxContext.DrawIndexedInstanced(m_index_count_perinstance, m_instance_num, 0, 0, 0);
-}
-
-void CSimLumenVisualization::VisualizeGloablSDFs(GraphicsContext& gfxContext)
-{
-	gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
-	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
-	gfxContext.FlushResourceBarriers();
-
-	gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
-	gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
-
-	gfxContext.SetRootSignature(m_vis_global_sdf_sig);
-	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	gfxContext.SetPipelineState(m_vis_global_sdf_pso);
-
-	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
-	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);
-	gfxContext.SetDynamicDescriptor(2, 0, m_sdf_instance_buffer.GetSRV());
-	gfxContext.SetDynamicDescriptor(2, 1, GetGlobalResource().m_scene_sdf_infos_gpu.GetSRV());
-	gfxContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
-	gfxContext.SetDynamicSampler(4, 0, SamplerPointClamp);
-	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
-	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());
-	gfxContext.SetIndexBuffer(m_sdf_vis_index_buffer.IndexBufferView());
-	gfxContext.DrawIndexedInstanced(m_index_count_perinstance, m_instance_num, 0, 0, 0);
-}
-
 void CSimLumenVisualization::InitSDFVisBuffer()
 {
 	std::vector<Math::Vector3> global_vis_cube_positions;
@@ -256,4 +346,35 @@ void CSimLumenVisualization::InitSDFVisBuffer()
 
 	m_instance_num = global_instances.size();
 	m_sdf_instance_buffer.Create(L"m_sdf_instance_buffer", global_instances.size(), sizeof(Matrix4), global_instances.data());
+}
+
+void CSimLumenVisualization::InitSurfaceCacheVisBuffer()
+{
+	std::vector<DirectX::XMFLOAT3> global_scache_quad_positions;
+	std::vector<DirectX::XMFLOAT2> global_scache_quad_uvs;
+	std::vector<unsigned int> global_vis_cube_indices;
+
+	global_scache_quad_positions.resize(4);
+	global_scache_quad_positions[0] = DirectX::XMFLOAT3(1, -1, 0);
+	global_scache_quad_positions[1] = DirectX::XMFLOAT3(1, 1, 0);
+	global_scache_quad_positions[2] = DirectX::XMFLOAT3(-1, -1, 0);
+	global_scache_quad_positions[3] = DirectX::XMFLOAT3(-1, 1, 0);
+
+	global_scache_quad_uvs.resize(4);
+	global_scache_quad_uvs[0] = DirectX::XMFLOAT2(1, 0);
+	global_scache_quad_uvs[1] = DirectX::XMFLOAT2(1, 1);
+	global_scache_quad_uvs[2] = DirectX::XMFLOAT2(0, 0);
+	global_scache_quad_uvs[3] = DirectX::XMFLOAT2(0, 1);
+
+	global_vis_cube_indices.resize(6);
+	global_vis_cube_indices[0] = 0;
+	global_vis_cube_indices[1] = 1;
+	global_vis_cube_indices[2] = 2;
+	global_vis_cube_indices[3] = 2;
+	global_vis_cube_indices[4] = 1;
+	global_vis_cube_indices[5] = 3;
+
+	m_scache_vis_pos_buffer.Create(L"m_scache_vis_pos_buffer", global_scache_quad_positions.size(), sizeof(DirectX::XMFLOAT3), global_scache_quad_positions.data());
+	m_scache_vis_uv_buffer.Create(L"global_scache_quad_uvs", global_scache_quad_uvs.size(), sizeof(DirectX::XMFLOAT2), global_scache_quad_uvs.data());
+	m_scache_vis_index_buffer.Create(L"m_scache_vis_index_buffer", global_vis_cube_indices.size(),sizeof(unsigned int), global_vis_cube_indices.data());
 }
