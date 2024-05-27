@@ -2,7 +2,7 @@
 
 using namespace Graphics;
 
-static void CreateSDFVisBox(std::vector<Math::Vector3>& positions, std::vector<unsigned int>& indices, float x, float y, float z)
+static void CreateVisBox(std::vector<Math::Vector3>& positions, std::vector<unsigned int>& indices, float x, float y, float z)
 {
 	float half_x = x / 2;
 	float half_y = y / 2;
@@ -108,7 +108,7 @@ void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
 	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
 	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());
 	gfxContext.SetIndexBuffer(m_sdf_vis_index_buffer.IndexBufferView());
-	gfxContext.DrawIndexedInstanced(m_index_count_perinstance, m_instance_num, 0, 0, 0);
+	gfxContext.DrawIndexedInstanced(m_sdf_vis_index_count_perins, m_instance_num, 0, 0, 0);
 }
 
 void CSimLumenVisualization::VisualizeGloablSDFs(GraphicsContext& gfxContext)
@@ -133,7 +133,7 @@ void CSimLumenVisualization::VisualizeGloablSDFs(GraphicsContext& gfxContext)
 	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
 	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());
 	gfxContext.SetIndexBuffer(m_sdf_vis_index_buffer.IndexBufferView());
-	gfxContext.DrawIndexedInstanced(m_index_count_perinstance, m_instance_num, 0, 0, 0);
+	gfxContext.DrawIndexedInstanced(m_sdf_vis_index_count_perins, m_instance_num, 0, 0, 0);
 }
 
 void CSimLumenVisualization::VisualizeSurfaceCache(GraphicsContext& gfxContext)
@@ -307,7 +307,7 @@ void CSimLumenVisualization::InitSDFVisBuffer()
 				Math::Vector3 center_offset = (Math::Vector3(idx_x, idx_y, idx_z) - Math::Vector3(1, 1, 1)) * 0.375;
 				std::vector<Math::Vector3> sub_positions;
 				std::vector<unsigned int> sub_indices;
-				CreateSDFVisBox(sub_positions, sub_indices, 0.25, 0.25, 0.25);
+				CreateVisBox(sub_positions, sub_indices, 0.25, 0.25, 0.25);
 				for (int pos_idx = 0; pos_idx < sub_positions.size(); pos_idx++)
 				{
 					sub_positions[pos_idx] += center_offset;
@@ -325,7 +325,7 @@ void CSimLumenVisualization::InitSDFVisBuffer()
 		}
 	}
 
-	m_index_count_perinstance = global_vis_cube_indices.size();
+	m_sdf_vis_index_count_perins = global_vis_cube_indices.size();
 
 	m_sdf_vis_pos_buffer.Create(L"m_sdf_vis_pos_buffer", global_vis_cube_positions.size(), sizeof(Math::Vector3), global_vis_cube_positions.data());
 	m_sdf_vis_direction_buffer.Create(L"m_sdf_vis_direction_buffer", global_vis_cube_direction.size(), sizeof(Math::Vector3), global_vis_cube_direction.data());
@@ -346,6 +346,60 @@ void CSimLumenVisualization::InitSDFVisBuffer()
 
 	m_instance_num = global_instances.size();
 	m_sdf_instance_buffer.Create(L"m_sdf_instance_buffer", global_instances.size(), sizeof(Matrix4), global_instances.data());
+}
+
+void CSimLumenVisualization::InitVisVoxelLightBuffer()
+{
+	std::vector<Math::Vector3> global_vis_cube_positions;
+	std::vector<Math::Vector3> global_vis_cube_direction;
+	std::vector<unsigned int> global_vis_cube_indices;
+
+	int global_index_offset = 0;
+	for (int idx_x = 0; idx_x < 3; idx_x++)
+	{
+		for (int idx_y = 0; idx_y < 3; idx_y++)
+		{
+			for (int idx_z = 0; idx_z < 3; idx_z++)
+			{
+				if (idx_x == 1 && idx_y == 1 && idx_z == 1)
+				{
+					continue;
+				}
+
+				int abs_offset_x = Math::Abs(idx_x - 1);
+				int abs_offset_y = Math::Abs(idx_y - 1);
+
+				if (abs_offset_x == 1 && abs_offset_y == 1 )
+				{
+					continue;
+				}
+
+				Math::Vector3 center_offset = (Math::Vector3(idx_x, idx_y, idx_z) - Math::Vector3(1, 1, 1)) * 0.75;
+				std::vector<Math::Vector3> sub_positions;
+				std::vector<unsigned int> sub_indices;
+				CreateVisBox(sub_positions, sub_indices, 0.5, 0.5, 0.5);
+				for (int pos_idx = 0; pos_idx < sub_positions.size(); pos_idx++)
+				{
+					sub_positions[pos_idx] += center_offset;
+					global_vis_cube_positions.push_back(sub_positions[pos_idx]);
+					global_vis_cube_direction.push_back(center_offset);
+				}
+
+				for (int index_idx = 0; index_idx < sub_indices.size(); index_idx++)
+				{
+
+					global_vis_cube_indices.push_back(sub_indices[index_idx] + global_index_offset);
+				}
+				global_index_offset += sub_positions.size();
+			}
+		}
+	}
+
+	m_vox_vis_index_count_perins = global_vis_cube_indices.size();
+
+	m_vox_vis_pos_buffer.Create(L"m_vox_vis_pos_buffer", global_vis_cube_positions.size(), sizeof(Math::Vector3), global_vis_cube_positions.data());
+	m_vox_vis_direction_buffer.Create(L"m_vox_vis_direction_buffer", global_vis_cube_direction.size(), sizeof(Math::Vector3), global_vis_cube_direction.data());
+	m_vox_vis_index_buffer.Create(L"m_vox_vis_index_buffer", global_vis_cube_indices.size(), sizeof(unsigned int), global_vis_cube_indices.data());
 }
 
 void CSimLumenVisualization::InitSurfaceCacheVisBuffer()
