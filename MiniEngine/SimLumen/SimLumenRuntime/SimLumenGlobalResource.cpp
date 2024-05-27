@@ -151,10 +151,12 @@ void InitSceneCardInfo()
 		{
 			SCardInfo card_info;
 			card_info.rotate_back_matrix = mesh_resource.m_cards[dir].m_rotate_back_matrix;
+			card_info.rotate_matrix = Math::Invert(card_info.rotate_back_matrix);
 			card_info.rotated_extents = mesh_resource.m_cards[dir].m_rotated_extents;
 			card_info.bound_center = mesh_resource.m_cards[dir].m_bound_center;
 			card_info.mesh_index = mesh_idx;
 			card_info.local_to_world = mesh_resource.m_local_to_world;
+			card_info.world_to_local = Math::Invert(card_info.local_to_world);
 			scene_card_infos.push_back(card_info);
 		}
 	};
@@ -189,4 +191,5 @@ void InitGlobalResource()
 	gSimLumenGlobalResource.m_lumen_scene_info.scene_card_num = GetGlobalResource().m_scene_card_info.size();
 
 	gSimLumenGlobalResource.scene_voxel_visibility_buffer.Create(L"scene_voxel_visibility_buffer", SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z, sizeof(SVoxelVisibilityInfo));
+	gSimLumenGlobalResource.m_scene_voxel_lighting.Create(L"m_scene_voxel_lighting", SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z, sizeof(SVoxelLighting));
 }

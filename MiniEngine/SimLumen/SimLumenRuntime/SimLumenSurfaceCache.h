@@ -17,4 +17,7 @@ private:
 
 	RootSignature m_scache_combine_light_sig;
 	ComputePSO m_scache_combine_light_pso;
+
+	RootSignature m_scache_inject_light_sig;
+	ComputePSO m_scache_inject_light_pso;
 };

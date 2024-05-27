@@ -81,7 +81,9 @@ struct SVoxelVisibilityInfo
 struct SCardInfo
 {
     float4x4 local_to_world;
+    float4x4 world_to_local;
     float4x4 rotate_back_matrix;
+    float4x4 rotate_matrix;
     float3 rotated_extents;
     float padding0;
     float3 bound_center;
@@ -96,15 +98,29 @@ struct SCardData
     float3 albedo;
 };
 
-static const float3 voxel_light_direction[6] = {
-    float3(+1.0,0,0),
-    float3(-1.0,0,0),
-    
-    float3(0,+1.0,0),
-    float3(0,-1.0,0),
-
-    float3(0,0,+1.0),
-    float3(0,0,-1.0),
+struct SVoxelLighting
+{
+    float3 final_lighting[6];
 };
 
+static const float3 voxel_light_direction[6] = {
+    float3(0,0,-1.0),
+    float3(0,0,+1.0),
+
+    float3(0,-1.0,0),
+    float3(0,+1.0,0),
+
+    float3(+1.0,0,0),
+    float3(-1.0,0,0),
+};
+
+float2 GetCardUVFromWorldPos(SCardInfo card_info, float3 world_pos)
+{
+    float3 local_pos = mul(card_info.world_to_local, float4(world_pos, 1.0)).xyz;
+    local_pos = local_pos - card_info.bound_center;
+    float3 card_direction_pos = mul((float3x3)card_info.rotate_matrix, local_pos);
+
+    float2 uv = (card_direction_pos.xy / card_info.rotated_extents.xy) * 0.5f + 0.5f;
+    return uv;
+}
 #endif

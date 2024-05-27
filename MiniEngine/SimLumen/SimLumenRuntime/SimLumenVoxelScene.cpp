@@ -12,7 +12,7 @@ void CSimLumenVoxelScene::Init()
 	m_vox_vis_update_sig[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, 1);
 	m_vox_vis_update_sig.Finalize(L"m_vox_vis_update_sig");
 
-	std::shared_ptr<SCompiledShaderCode> p_cs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenVisibilityBuffer.hlsl", L"SceneVoxelVisibilityUpdate", L"cs_5_1", nullptr, 0);
+	std::shared_ptr<SCompiledShaderCode> p_cs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenVoxelVisibilityBuffer.hlsl", L"SceneVoxelVisibilityUpdate", L"cs_5_1", nullptr, 0);
 	m_vox_vis_update_pso.SetRootSignature(m_vox_vis_update_sig);
 	m_vox_vis_update_pso.SetComputeShader(p_cs_shader_code->GetBufferPointer(), p_cs_shader_code->GetBufferSize());
 	m_vox_vis_update_pso.Finalize();

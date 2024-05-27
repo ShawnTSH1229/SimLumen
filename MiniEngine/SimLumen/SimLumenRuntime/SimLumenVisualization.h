@@ -14,6 +14,7 @@ private:
 	void InitSurfaceCachePSO();
 	void InitSDFVisPSO();
 	void InitSDFVisBuffer();
+	void InitVisVoxelLightBuffer();
 	void InitSurfaceCacheVisBuffer();
 
 	ByteAddressBuffer m_sdf_vis_pos_buffer;

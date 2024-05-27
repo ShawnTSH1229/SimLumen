@@ -31,6 +31,20 @@ void CSimLumenSurfaceCache::Init()
         m_scache_combine_light_pso.SetComputeShader(p_cs_shader_code->GetBufferPointer(), p_cs_shader_code->GetBufferSize());
         m_scache_combine_light_pso.Finalize();
     }
+
+	// sruface cache inject lighting
+	{
+		m_scache_inject_light_sig.Reset(3, 0);
+		m_scache_inject_light_sig[0].InitAsConstantBuffer(0);
+		m_scache_inject_light_sig[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 4);
+		m_scache_inject_light_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
+		m_scache_inject_light_sig.Finalize(L"m_scache_inject_light_sig");
+
+		std::shared_ptr<SCompiledShaderCode> p_cs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenLightInjection.hlsl", L"LumenSceneLightInject", L"cs_5_1", nullptr, 0);
+		m_scache_inject_light_pso.SetRootSignature(m_scache_inject_light_sig);
+		m_scache_inject_light_pso.SetComputeShader(p_cs_shader_code->GetBufferPointer(), p_cs_shader_code->GetBufferSize());
+		m_scache_inject_light_pso.Finalize();
+	}
 }
 
 void CSimLumenSurfaceCache::SurfaceCacheDirectLighting()
@@ -84,5 +98,25 @@ void CSimLumenSurfaceCache::SurfaceCacheCombineLighting()
 
 void CSimLumenSurfaceCache::SurfaceCacheInjectLighting()
 {
+	ComputeContext& cptContext = ComputeContext::Begin(L"SurfaceCacheCombineLighting");
 
+	cptContext.SetRootSignature(m_scache_inject_light_sig);
+	cptContext.SetPipelineState(m_scache_inject_light_pso);
+
+	cptContext.TransitionResource(GetGlobalResource().scene_voxel_visibility_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_sdf_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.FlushResourceBarriers();
+
+	cptContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
+	cptContext.SetDynamicDescriptor(1, 0, GetGlobalResource().scene_voxel_visibility_buffer.GetSRV());
+	cptContext.SetDynamicDescriptor(1, 1, GetGlobalResource().m_scene_sdf_infos_gpu.GetSRV());
+	cptContext.SetDynamicDescriptor(1, 2, GetGlobalResource().m_scene_card_infos_gpu.GetSRV());
+	cptContext.SetDynamicDescriptor(1, 3, g_surface_cache_final.GetSRV());
+	cptContext.SetDynamicDescriptor(2, 0, GetGlobalResource().m_scene_voxel_lighting.GetUAV());
+
+	cptContext.Dispatch(SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z / 64, 6, 1);
+	cptContext.Finish();
 }

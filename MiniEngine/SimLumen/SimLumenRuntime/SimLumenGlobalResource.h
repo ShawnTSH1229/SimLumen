@@ -85,10 +85,18 @@ struct SVoxelVisibilityInfo
 	SVoxelDirVisInfo voxel_vis_info[6];
 };
 
+struct SVoxelLighting
+{
+	DirectX::XMFLOAT3 final_lighting[6];
+};
+
 struct SCardInfo
 {
 	Math::Matrix4 local_to_world;
-	Math::Matrix4 rotate_back_matrix;
+	Math::Matrix4 world_to_local;
+
+	Math::Matrix4 rotate_back_matrix; // front to dir
+	Math::Matrix4 rotate_matrix; // dir to front
 	DirectX::XMFLOAT3 rotated_extents;
 	float padding0;
 	DirectX::XMFLOAT3 bound_center;
@@ -126,9 +134,13 @@ struct SSimLumenGlobalResource
 	Math::XMINT2 m_atlas_size;
 	Math::XMINT2 m_atlas_num_xy;
 
+	// scene voxel lighting
+	StructuredBuffer m_scene_voxel_lighting;
 	StructuredBuffer scene_voxel_visibility_buffer;
 
 	Math::Matrix4 m_shadow_vpmatrix;
+
+
 
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal

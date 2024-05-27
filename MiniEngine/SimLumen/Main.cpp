@@ -147,6 +147,7 @@ void SimLumen::RenderScene( void )
     m_card_capturer.UpdateSceneCards();
     m_lumen_surface_cache.SurfaceCacheDirectLighting();
     m_lumen_surface_cache.SurfaceCacheCombineLighting();
+    m_lumen_surface_cache.SurfaceCacheInjectLighting();
     m_shadowpass.RenderingShadowMap(gfxContext);
     m_gbuffer_generation.Rendering(gfxContext);
     m_lighting_pass.Rendering(gfxContext);
