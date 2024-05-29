@@ -157,6 +157,7 @@ void SimLumen::RenderScene( void )
 
 void SimLumen::UpdateConstantBuffer(GraphicsContext& cbUpdateContext)
 {
+
     EngineProfiling::BeginBlock(L"UpdateConstantBuffer");
 
     SLumenViewGlobalConstant globals;

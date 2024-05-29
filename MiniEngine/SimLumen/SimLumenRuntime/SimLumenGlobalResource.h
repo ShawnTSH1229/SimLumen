@@ -72,6 +72,7 @@ __declspec(align(256)) struct SLumenSceneInfo
 
 	uint32_t card_num_xy;
 	uint32_t scene_card_num;
+	uint32_t frame_num;
 };
 
 struct SVoxelDirVisInfo
@@ -140,13 +141,13 @@ struct SSimLumenGlobalResource
 
 	Math::Matrix4 m_shadow_vpmatrix;
 
-
-
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal
 	// 3: visualize surface cache albedo
 	// 4: visualize surface cache normal
-	// 5: visualize  surface cache direct lighting
+	// 5: visualize surface cache direct lighting
+	// 6: visualize surface cache indirect lighting
+	// 7: visualize surface cache final lighting
 	int m_visualize_type;
 };
 

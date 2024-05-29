@@ -73,10 +73,6 @@ void CSimLuCardCapturer::UpdateSceneCards()
                 for (int dir = 0; dir < 6; dir++)
                 {
                     {
-                        // 0 / 1 -> 0 ->  2
-                        // 2 / 3 -> 1 ->  1
-                        // 4 / 5 -> 2 ->  0
-
                         static const int xyz_dimension[9] =
                         {
                             0,1,2,

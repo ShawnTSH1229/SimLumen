@@ -189,6 +189,7 @@ void InitGlobalResource()
 	gSimLumenGlobalResource.m_lumen_scene_info.voxel_size = gloabl_sdf_voxel_size * 2;
 	gSimLumenGlobalResource.m_lumen_scene_info.card_num_xy = GetGlobalResource().m_atlas_num_xy.x;
 	gSimLumenGlobalResource.m_lumen_scene_info.scene_card_num = GetGlobalResource().m_scene_card_info.size();
+	gSimLumenGlobalResource.m_lumen_scene_info.frame_num = 0;
 
 	gSimLumenGlobalResource.scene_voxel_visibility_buffer.Create(L"scene_voxel_visibility_buffer", SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z, sizeof(SVoxelVisibilityInfo));
 	gSimLumenGlobalResource.m_scene_voxel_lighting.Create(L"m_scene_voxel_lighting", SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z, sizeof(SVoxelLighting));

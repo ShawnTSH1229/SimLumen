@@ -63,8 +63,11 @@ void CSimLumenVisualization::Init()
 {
 	InitSDFVisBuffer();
 	InitSurfaceCacheVisBuffer();
+	InitVisVoxelLightBuffer();
+	
 	InitSDFVisPSO();
 	InitSurfaceCachePSO();
+	InitVisVoxelLightingPSO();
 }
 
 
@@ -79,9 +82,13 @@ void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
 	{
 		VisualizeGloablSDFs(gfxContext);
 	}
-	else if (GetGlobalResource().m_visualize_type >= 3 && GetGlobalResource().m_visualize_type <= 5)
+	else if (GetGlobalResource().m_visualize_type >= 3 && GetGlobalResource().m_visualize_type <= 7)
 	{
 		VisualizeSurfaceCache(gfxContext);
+	}
+	else if (GetGlobalResource().m_visualize_type == 8)
+	{
+		VisualizeVoxelLighting(gfxContext);
 	}
 	EngineProfiling::EndBlock();
 }
@@ -175,6 +182,31 @@ void CSimLumenVisualization::VisualizeSurfaceCache(GraphicsContext& gfxContext)
 	gfxContext.SetVertexBuffer(1, m_scache_vis_uv_buffer.VertexBufferView());
 	gfxContext.SetIndexBuffer(m_scache_vis_index_buffer.IndexBufferView());
 	gfxContext.DrawIndexedInstanced(6, GetGlobalResource().m_scene_card_info.size(), 0, 0, 0);
+}
+
+void CSimLumenVisualization::VisualizeVoxelLighting(GraphicsContext& gfxContext)
+{
+	gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+	gfxContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gfxContext.FlushResourceBarriers();
+
+	gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());
+	gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
+
+	gfxContext.SetRootSignature(m_vis_voxlight_sig);
+	gfxContext.SetPipelineState(m_vis_voxlight_pso);
+	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	gfxContext.SetConstantBuffer(0, GetGlobalResource().m_global_view_constant_buffer);
+	gfxContext.SetDynamicConstantBufferView(1, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
+	gfxContext.SetDynamicDescriptor(2, 0, m_sdf_instance_buffer.GetSRV());
+	gfxContext.SetDynamicDescriptor(2, 1, GetGlobalResource().m_scene_voxel_lighting.GetSRV());
+
+	gfxContext.SetVertexBuffer(0, m_vox_vis_pos_buffer.VertexBufferView());
+	gfxContext.SetVertexBuffer(1, m_vox_vis_direction_buffer.VertexBufferView());
+	gfxContext.SetIndexBuffer(m_vox_vis_index_buffer.IndexBufferView());
+	gfxContext.DrawIndexedInstanced(m_vox_vis_index_count_perins, m_instance_num, 0, 0, 0);
 }
 
 void CSimLumenVisualization::InitSurfaceCachePSO()
@@ -286,6 +318,45 @@ void CSimLumenVisualization::InitSDFVisPSO()
 	}
 }
 
+void CSimLumenVisualization::InitVisVoxelLightingPSO()
+{
+	D3D12_INPUT_ELEMENT_DESC pos_norm_uv[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT,    1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	};
+
+	DXGI_FORMAT ColorFormat = g_SceneColorBuffer.GetFormat();
+	DXGI_FORMAT DepthFormat = g_SceneDepthBuffer.GetFormat();
+
+	// visualize mesh sdf root signature
+	{
+		m_vis_voxlight_sig.Reset(3, 0);
+		m_vis_voxlight_sig[0].InitAsConstantBuffer(0);
+		m_vis_voxlight_sig[1].InitAsConstantBuffer(1);
+		m_vis_voxlight_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2);
+		m_vis_voxlight_sig.Finalize(L"m_vis_voxlight_sig", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	}
+
+	// visualize mesh sdf pso
+	{
+		std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenVisualizeVoxLighting.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
+		std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenVisualizeVoxLighting.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
+
+		m_vis_voxlight_pso = GraphicsPSO(L"m_vis_voxlight_pso");
+		m_vis_voxlight_pso.SetRootSignature(m_vis_voxlight_sig);
+		m_vis_voxlight_pso.SetRasterizerState(RasterizerDefault);
+		m_vis_voxlight_pso.SetBlendState(BlendDisable);
+		m_vis_voxlight_pso.SetDepthStencilState(DepthStateReadWrite);
+		m_vis_voxlight_pso.SetInputLayout(_countof(pos_norm_uv), pos_norm_uv);
+		m_vis_voxlight_pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+		m_vis_voxlight_pso.SetRenderTargetFormats(1, &ColorFormat, DepthFormat);
+		m_vis_voxlight_pso.SetVertexShader(p_vs_shader_code->GetBufferPointer(), p_vs_shader_code->GetBufferSize());
+		m_vis_voxlight_pso.SetPixelShader(p_ps_shader_code->GetBufferPointer(), p_ps_shader_code->GetBufferSize());
+		m_vis_voxlight_pso.Finalize();
+	}
+}
+
 void CSimLumenVisualization::InitSDFVisBuffer()
 {
 	std::vector<Math::Vector3> global_vis_cube_positions;
@@ -368,12 +439,12 @@ void CSimLumenVisualization::InitVisVoxelLightBuffer()
 
 				int abs_offset_x = Math::Abs(idx_x - 1);
 				int abs_offset_y = Math::Abs(idx_y - 1);
+				int abs_offset_z = Math::Abs(idx_z - 1);
 
-				if (abs_offset_x == 1 && abs_offset_y == 1 )
-				{
-					continue;
-				}
-
+				if (abs_offset_x == 1 && abs_offset_y == 1) { continue; };
+				if (abs_offset_x == 1 && abs_offset_z == 1) { continue; };
+				if (abs_offset_y == 1 && abs_offset_z == 1) { continue; };
+				
 				Math::Vector3 center_offset = (Math::Vector3(idx_x, idx_y, idx_z) - Math::Vector3(1, 1, 1)) * 0.75;
 				std::vector<Math::Vector3> sub_positions;
 				std::vector<unsigned int> sub_indices;

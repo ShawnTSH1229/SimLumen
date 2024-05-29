@@ -35,7 +35,7 @@ void LumenSceneLightInject(uint3 group_idx : SV_GroupID, uint3 group_thread_idx 
     if(mesh_index != -1)
     {
         SMeshSDFInfo mesh_info = scene_sdf_infos[mesh_index];
-        uint card_index = (1 - (direction_idx - uint(direction_idx / 2) * 2)) + uint(direction_idx / 2); // 0 -> 1 1 -> 0 2 -> 3 3 -> 2 ...
+        uint card_index = direction_idx; 
         uint global_card_index = mesh_info.mesh_card_start_index + card_index;
 
         SCardInfo card_info = scene_card_infos[global_card_index];

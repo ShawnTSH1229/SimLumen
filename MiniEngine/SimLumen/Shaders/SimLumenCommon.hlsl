@@ -11,6 +11,9 @@
 
 #define SCENE_SDF_NUM 13
 #define SURFACE_CACHE_TEX_SIZE 2048
+#define SURFACE_CACHE_CARD_SIZE 128
+#define SURFACE_CACHE_PROBE_TEXELS_SIZE 4
+#define PI 3.141592653589793284
 
 #define GLOBAL_VIEW_CONSTANT_BUFFER\
     float4x4 ViewProjMatrix;\
@@ -32,6 +35,7 @@
     float voxel_size;\
     uint card_num_xy;\
     uint scene_card_num;\
+    uint frame_index;
 
 struct STraceResult
 {
@@ -110,8 +114,8 @@ static const float3 voxel_light_direction[6] = {
     float3(0,-1.0,0),
     float3(0,+1.0,0),
 
-    float3(+1.0,0,0),
     float3(-1.0,0,0),
+    float3(+1.0,0,0),
 };
 
 float2 GetCardUVFromWorldPos(SCardInfo card_info, float3 world_pos)

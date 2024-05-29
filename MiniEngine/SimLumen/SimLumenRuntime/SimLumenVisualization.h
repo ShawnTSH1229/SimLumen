@@ -10,9 +10,12 @@ private:
 	void VisualizeMeshSDFs(GraphicsContext& gfxContext);
 	void VisualizeGloablSDFs(GraphicsContext& gfxContext);
 	void VisualizeSurfaceCache(GraphicsContext& gfxContext);
+	void VisualizeVoxelLighting(GraphicsContext& gfxContext);
 
 	void InitSurfaceCachePSO();
 	void InitSDFVisPSO();
+	void InitVisVoxelLightingPSO();
+
 	void InitSDFVisBuffer();
 	void InitVisVoxelLightBuffer();
 	void InitSurfaceCacheVisBuffer();
