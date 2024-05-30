@@ -21,6 +21,7 @@
 #include "SimLumenRuntime/SimLumenGBufferGeneration.h"
 #include "SimLumenRuntime/SimLumenLightingPass.h"
 #include "SimLumenRuntime/SimLumenSurfaceCache.h"
+#include "SimLumenRuntime/SimLumenRadiosity.h"
 
 using namespace GameCore;
 using namespace Graphics;
@@ -53,6 +54,7 @@ private:
     CSimLumenGBufferGeneration m_gbuffer_generation;
     CSimLumenLightingPass m_lighting_pass;
     CSimLumenSurfaceCache m_lumen_surface_cache;
+    CSimLumenRadiosity m_radiosity_pass;
 };
 
 CREATE_APPLICATION( SimLumen )
@@ -101,6 +103,7 @@ void SimLumen::Startup( void )
     m_gbuffer_generation.Init();
     m_lighting_pass.Init();
     m_lumen_surface_cache.Init();
+    m_radiosity_pass.Init();
 }
 
 namespace Graphics
@@ -137,6 +140,8 @@ void SimLumen::Update( float deltaT )
     VIS_KEY_PRESS(7);
     VIS_KEY_PRESS(8);
     VIS_KEY_PRESS(9);
+
+    GetGlobalResource().m_lumen_scene_info.frame_num++;
 }
 
 void SimLumen::RenderScene( void )
@@ -145,10 +150,11 @@ void SimLumen::RenderScene( void )
     UpdateConstantBuffer(gfxContext);
     m_lumen_vox_scene.UpdateVisibilityBuffer();
     m_card_capturer.UpdateSceneCards();
+    m_shadowpass.RenderingShadowMap(gfxContext);
     m_lumen_surface_cache.SurfaceCacheDirectLighting();
     m_lumen_surface_cache.SurfaceCacheCombineLighting();
     m_lumen_surface_cache.SurfaceCacheInjectLighting();
-    m_shadowpass.RenderingShadowMap(gfxContext);
+    m_radiosity_pass.RadiosityTrace();
     m_gbuffer_generation.Rendering(gfxContext);
     m_lighting_pass.Rendering(gfxContext);
     m_lumen_visualizer.Render(gfxContext);
@@ -157,7 +163,7 @@ void SimLumen::RenderScene( void )
 
 void SimLumen::UpdateConstantBuffer(GraphicsContext& cbUpdateContext)
 {
-
+    
     EngineProfiling::BeginBlock(L"UpdateConstantBuffer");
 
     SLumenViewGlobalConstant globals;

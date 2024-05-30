@@ -39,6 +39,9 @@ namespace Graphics
     extern ColorBuffer g_surface_cache_direct;
     extern ColorBuffer g_surface_cache_indirect;
     extern ColorBuffer g_surface_cache_final;
+
+    extern ColorBuffer g_trace_radiance_atlas;
+
     extern ColorBuffer g_GBufferA;
     extern ColorBuffer g_GBufferB;
     //SimLumen:END

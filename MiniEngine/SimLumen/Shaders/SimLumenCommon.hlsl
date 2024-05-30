@@ -12,7 +12,10 @@
 #define SCENE_SDF_NUM 13
 #define SURFACE_CACHE_TEX_SIZE 2048
 #define SURFACE_CACHE_CARD_SIZE 128
+#define SURFACE_CACHE_CARD_NUM_XY (SURFACE_CACHE_TEX_SIZE / SURFACE_CACHE_CARD_SIZE)
 #define SURFACE_CACHE_PROBE_TEXELS_SIZE 4
+#define SURFACE_CACHE_CARD_TILE_NUM_XY (SURFACE_CACHE_CARD_SIZE / SURFACE_CACHE_PROBE_TEXELS_SIZE)
+#define SURFACE_CACHE_ATLAS_TILE_NUM (SURFACE_CACHE_TEX_SIZE / SURFACE_CACHE_PROBE_TEXELS_SIZE)
 #define PI 3.141592653589793284
 
 #define GLOBAL_VIEW_CONSTANT_BUFFER\
@@ -127,4 +130,111 @@ float2 GetCardUVFromWorldPos(SCardInfo card_info, float3 world_pos)
     float2 uv = (card_direction_pos.xy / card_info.rotated_extents.xy) * 0.5f + 0.5f;
     return uv;
 }
+
+uint GetVoxelIndexFromWorldPos(float3 world_position)
+{
+    float3 voxel_offset = world_position - scene_voxel_min_pos;
+    uint3 voxel_index_3d = voxel_offset / voxel_size;
+    uint voxel_index_1d = voxel_index_3d.z * uint(SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y) + voxel_index_3d.y * SCENE_VOXEL_SIZE_X + voxel_index_3d.x;
+    return voxel_index_1d;
+}
+
+// From Unreal Engine SHCommon.ush:[BEGIN]
+struct FOneBandSHVector
+{
+	half V;
+};
+
+struct FOneBandSHVectorRGB
+{
+	FOneBandSHVector R;
+	FOneBandSHVector G;
+	FOneBandSHVector B;
+};
+
+struct FTwoBandSHVector
+{
+	half4 V;
+};
+
+struct FTwoBandSHVectorRGB
+{
+	FTwoBandSHVector R;
+	FTwoBandSHVector G;
+	FTwoBandSHVector B;
+};
+
+FTwoBandSHVectorRGB MulSH(FTwoBandSHVectorRGB A, half Scalar)
+{
+	FTwoBandSHVectorRGB Result;
+	Result.R.V = A.R.V * Scalar;
+	Result.G.V = A.G.V * Scalar;
+	Result.B.V = A.B.V * Scalar;
+	return Result;
+}
+
+FTwoBandSHVectorRGB MulSH(FTwoBandSHVector A, half3 Color)
+{
+	FTwoBandSHVectorRGB Result;
+	Result.R.V = A.V * Color.r;
+	Result.G.V = A.V * Color.g;
+	Result.B.V = A.V * Color.b;
+	return Result;
+}
+
+FTwoBandSHVector AddSH(FTwoBandSHVector A, FTwoBandSHVector B)
+{
+	FTwoBandSHVector Result = A;
+	Result.V += B.V;
+	return Result;
+}
+
+FTwoBandSHVectorRGB AddSH(FTwoBandSHVectorRGB A, FTwoBandSHVectorRGB B)
+{
+	FTwoBandSHVectorRGB Result;
+	Result.R = AddSH(A.R, B.R);
+	Result.G = AddSH(A.G, B.G);
+	Result.B = AddSH(A.B, B.B);
+	return Result;
+}
+
+FTwoBandSHVector SHBasisFunction(half3 InputVector)
+{
+	FTwoBandSHVector Result;
+	// These are derived from simplifying SHBasisFunction in C++
+	Result.V.x = 0.282095f; 
+	Result.V.y = -0.488603f * InputVector.y;
+	Result.V.z = 0.488603f * InputVector.z;
+	Result.V.w = -0.488603f * InputVector.x;
+	return Result;
+}
+
+FTwoBandSHVector CalcDiffuseTransferSH(half3 Normal,half Exponent)
+{
+	FTwoBandSHVector Result = SHBasisFunction(Normal);
+
+	half L0 =					2 * PI / (1 + 1 * Exponent							);
+	half L1 =					2 * PI / (2 + 1 * Exponent							);
+
+	Result.V.x *= L0;
+	Result.V.yzw *= L1;
+
+	return Result;
+}
+
+half DotSH(FTwoBandSHVector A,FTwoBandSHVector B)
+{
+	half Result = dot(A.V, B.V);
+	return Result;
+}
+
+half3 DotSH(FTwoBandSHVectorRGB A,FTwoBandSHVector B)
+{
+	half3 Result = 0;
+	Result.r = DotSH(A.R,B);
+	Result.g = DotSH(A.G,B);
+	Result.b = DotSH(A.B,B);
+	return Result;
+}
+// From Unreal Engine SHCommon.ush:[END]
 #endif

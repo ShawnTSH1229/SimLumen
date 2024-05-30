@@ -76,6 +76,7 @@
     <ClInclude Include="SimLumenRuntime\SimLumenGlobalResource.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenLightingPass.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenMeshInstance.h" />
+    <ClInclude Include="SimLumenRuntime\SimLumenRadiosity.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenRuntimeCommon.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenShadow.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenSurfaceCache.h" />
@@ -98,6 +99,7 @@
     <ClCompile Include="SimLumenRuntime\SimLumenGlobalResource.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenLightingPass.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenMeshInstance.cpp" />
+    <ClCompile Include="SimLumenRuntime\SimLumenRadiosity.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenRuntimeCommon.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenShadow.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenSurfaceCache.cpp" />
