@@ -20,13 +20,16 @@ uint3 Rand3DPCG16(int3 p)
 	return v >> 16u;
 }
 
-#define JITTER_DEBUG true
+#define JITTER_DEBUG false
 
 float2 GetProbeTexelCenter(uint IndirectLightingTemporalIndex, uint2 ProbeTileCoord)
 {
-    uint TemporalIndex = JITTER_DEBUG ? 0 : IndirectLightingTemporalIndex;
-    uint2 RandomSeed = Rand3DPCG16(int3(ProbeTileCoord, 0)).xy;
-	return Hammersley16(TemporalIndex % MAX_FRAME_ACCUMULATED, MAX_FRAME_ACCUMULATED, RandomSeed);
+	//todo: fix me
+    //uint TemporalIndex = JITTER_DEBUG ? 0 : IndirectLightingTemporalIndex;
+	//uint TemporalIndex = 0;
+    //uint2 RandomSeed = Rand3DPCG16(int3(ProbeTileCoord, 0)).xy;
+	//return Hammersley16(TemporalIndex % MAX_FRAME_ACCUMULATED, MAX_FRAME_ACCUMULATED, 0);
+	return float2(0.5,0.5);
 }
 
 /* 0 - 3 */

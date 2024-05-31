@@ -63,58 +63,56 @@ void LumenRadiosityDistanceFieldTracingCS(uint3 thread_index : SV_DispatchThread
         SGloablSDFHitResult hit_result = (SGloablSDFHitResult)0;
         TraceGlobalSDF(card_data.world_position + card_data.world_normal * gloabl_sdf_voxel_size * 2.0, world_ray, hit_result);
 
+        int x_dir = 0;
+        if(world_ray.x > 0.0) { x_dir = 5;  }
+        else { x_dir = 4;  }
+
+        int y_dir = 0;
+        if(world_ray.y > 0.0) { y_dir = 2;  }
+        else { y_dir = 2;  }
+
+        int z_dir = 0;
+        if(world_ray.z > 0.0) { z_dir = 1;  }
+        else { z_dir = 0;  }
+
         int max_dir_idx = -1;
         float max_dir = 0.0;
-
-        if(abs(world_ray.x) > max_dir)
-        {
-            if(world_ray.x > 0.0) { max_dir_idx = 5;  }
-            else { max_dir_idx = 4;  }
-
-            max_dir = abs(world_ray.x);
-        }
-
-        if(abs(world_ray.y) > max_dir)
-        {
-            if(world_ray.y > 0.0) { max_dir_idx = 3;  }
-            else { max_dir_idx = 2;  }
-
-            max_dir = abs(world_ray.y);
-        }
-
-        if(abs(world_ray.z) > max_dir)
-        {
-            if(world_ray.z > 0.0) { max_dir_idx = 1;  }
-            else { max_dir_idx = 0;  }
-
-            max_dir = abs(world_ray.z);
-        }
         
-        if(max_dir_idx > -1)
-        {
-            if(hit_result.bHit)
-            {
-                float3 hit_world_position = 
-                    world_ray * (hit_result.hit_distance - gloabl_sdf_voxel_size) + 
-                    card_data.world_position + 
-                    card_data.world_normal * gloabl_sdf_voxel_size * 2.0;
+         if(hit_result.bHit)
+         {
+            float3 hit_world_position = 
+                 world_ray * (hit_result.hit_distance - gloabl_sdf_voxel_size) + 
+                 card_data.world_position + 
+                 card_data.world_normal * gloabl_sdf_voxel_size * 2.0;
 
-                uint voxel_index_1d = GetVoxelIndexFromWorldPos(hit_world_position);
-                SVoxelLighting voxel_lighting = scene_voxel_lighting[voxel_index_1d];
-                radiance = voxel_lighting.final_lighting[max_dir_idx] * (1.0 / PI);
+            uint voxel_index_1d = GetVoxelIndexFromWorldPos(hit_world_position);
 
-                float max_lighting = max(radiance.x, max(radiance.y, radiance.z));
-                if(max_lighting > 1* (1.0 / PI))
-                {
-                    radiance *= (1* (1.0 / PI) / max_lighting);
-                }
-            }
-            else
+            SVoxelLighting voxel_lighting = scene_voxel_lighting[voxel_index_1d];
+            float3 voxel_lighting_x = voxel_lighting.final_lighting[x_dir];
+            float3 voxel_lighting_y = voxel_lighting.final_lighting[y_dir];
+            float3 voxel_lighting_z = voxel_lighting.final_lighting[z_dir];
+
+            float weight_x = saturate(dot(world_ray, voxel_light_direction[x_dir]));
+            float weight_y = saturate(dot(world_ray, voxel_light_direction[y_dir]));
+            float weight_z = saturate(dot(world_ray, voxel_light_direction[z_dir]));
+
+            radiance += voxel_lighting_x * weight_x;
+            radiance += voxel_lighting_y * weight_y;
+            radiance += voxel_lighting_z * weight_z;
+
+            radiance /= (weight_x + weight_y + weight_z);
+            radiance = radiance * (1.0 / PI);
+
+            float max_lighting = max(radiance.x, max(radiance.y, radiance.z));
+            if(max_lighting > 1* (1.0 / PI))
             {
-                radiance = float3(0.01, 0.01, 0.01); // hack sky light
+                 radiance *= (1* (1.0 / PI) / max_lighting);
             }
-            
-        }
+         }
+         else
+         {
+             radiance = float3(0.01, 0.01, 0.01); // hack sky light
+         }
     } 
     trace_radiance_atlas[pixel_atlas_pos.xy] = float4(radiance,0.0);
 }
