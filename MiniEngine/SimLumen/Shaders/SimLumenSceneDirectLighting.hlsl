@@ -50,16 +50,16 @@ void LumenCardBatchDirectLightingCS(uint3 group_idx : SV_GroupID, uint3 group_th
         {
             float3 light_direction = SunDirection;
             float NoL = saturate(dot(light_direction, card_data.world_normal));
-            directional_lighting = SunIntensity * NoL * card_data.albedo * shadow;
+            directional_lighting = SunIntensity * NoL * card_data.albedo * shadow * (1.0 / PI);
         }
 
         float3 point_lighting = float3(0,0,0);
         {
             float3 point_light_direction = point_light_world_pos - card_data.world_position;
-            float3 light_dist = length(point_light_direction);
+            float light_dist = length(point_light_direction);
             float attenuation = saturate((point_light_radius - light_dist) / point_light_radius);   
             float NoL = saturate(dot(normalize(point_light_direction), card_data.world_normal));
-            point_lighting = NoL * card_data.albedo * attenuation * attenuation;
+            point_lighting = NoL * card_data.albedo * attenuation * attenuation * (1.0 / PI);
         }
 
         surface_cache_direct_lighting[int2(pixel_pos.xy)] = float4(point_lighting + directional_lighting, 1.0);

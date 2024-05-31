@@ -41,6 +41,11 @@ namespace Graphics
     extern ColorBuffer g_surface_cache_final;
 
     extern ColorBuffer g_trace_radiance_atlas;
+    extern ColorBuffer g_trace_radiance_atlas_filtered;
+
+    extern ColorBuffer g_radiosity_probe_sh_red_atlas;
+    extern ColorBuffer g_radiosity_probe_sh_blue_atlas;
+    extern ColorBuffer g_radiosity_probe_sh_green_atlas;
 
     extern ColorBuffer g_GBufferA;
     extern ColorBuffer g_GBufferB;

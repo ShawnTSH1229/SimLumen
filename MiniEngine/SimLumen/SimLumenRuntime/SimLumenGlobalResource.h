@@ -148,6 +148,9 @@ struct SSimLumenGlobalResource
 	// 5: visualize surface cache direct lighting
 	// 6: visualize surface cache indirect lighting
 	// 7: visualize surface cache final lighting
+	// 8: visualize radiosity trace result
+	// 9: visualize voxel lighting
+	// T : visualize filtered radiosity
 	int m_visualize_type;
 };
 

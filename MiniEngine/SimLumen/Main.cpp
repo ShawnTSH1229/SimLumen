@@ -119,6 +119,9 @@ void SimLumen::Cleanup( void )
 #define VIS_KEY_PRESS(x)\
 if (GameInput::IsFirstPressed(GameInput::kKey_##x)) { GetGlobalResource().m_visualize_type = x; };
 
+#define VIS_KEY_PRESS_NUM(x,y)\
+if (GameInput::IsFirstPressed(GameInput::kKey_##x)) { GetGlobalResource().m_visualize_type = y; };
+
 void SimLumen::Update( float deltaT )
 {
     ScopedTimer _prof(L"Update State");
@@ -141,6 +144,11 @@ void SimLumen::Update( float deltaT )
     VIS_KEY_PRESS(8);
     VIS_KEY_PRESS(9);
 
+    VIS_KEY_PRESS_NUM(t, 10);
+    VIS_KEY_PRESS_NUM(u, 10);
+    VIS_KEY_PRESS_NUM(i, 10);
+    VIS_KEY_PRESS_NUM(o,10);
+
     GetGlobalResource().m_lumen_scene_info.frame_num++;
 }
 
@@ -150,11 +158,11 @@ void SimLumen::RenderScene( void )
     UpdateConstantBuffer(gfxContext);
     m_lumen_vox_scene.UpdateVisibilityBuffer();
     m_card_capturer.UpdateSceneCards();
-    m_shadowpass.RenderingShadowMap(gfxContext);
     m_lumen_surface_cache.SurfaceCacheDirectLighting();
     m_lumen_surface_cache.SurfaceCacheCombineLighting();
     m_lumen_surface_cache.SurfaceCacheInjectLighting();
     m_radiosity_pass.RadiosityTrace();
+    m_shadowpass.RenderingShadowMap(gfxContext);
     m_gbuffer_generation.Rendering(gfxContext);
     m_lighting_pass.Rendering(gfxContext);
     m_lumen_visualizer.Render(gfxContext);

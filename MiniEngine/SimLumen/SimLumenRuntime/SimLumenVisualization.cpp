@@ -82,11 +82,15 @@ void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
 	{
 		VisualizeGloablSDFs(gfxContext);
 	}
-	else if (GetGlobalResource().m_visualize_type >= 3 && GetGlobalResource().m_visualize_type <= 7)
+	else if (GetGlobalResource().m_visualize_type >= 3 && GetGlobalResource().m_visualize_type <= 8)
 	{
 		VisualizeSurfaceCache(gfxContext);
 	}
-	else if (GetGlobalResource().m_visualize_type == 8)
+	else if (GetGlobalResource().m_visualize_type == 10)
+	{
+		VisualizeSurfaceCache(gfxContext);
+	}
+	else if (GetGlobalResource().m_visualize_type == 9)
 	{
 		VisualizeVoxelLighting(gfxContext);
 	}
@@ -176,6 +180,22 @@ void CSimLumenVisualization::VisualizeSurfaceCache(GraphicsContext& gfxContext)
 	else if (GetGlobalResource().m_visualize_type == 5)
 	{
 		gfxContext.SetDynamicDescriptor(2, 1, g_surface_cache_direct.GetSRV());
+	}
+	else if (GetGlobalResource().m_visualize_type == 6)
+	{
+		gfxContext.SetDynamicDescriptor(2, 1, g_surface_cache_indirect.GetSRV());
+	}
+	else if (GetGlobalResource().m_visualize_type == 7)
+	{
+		gfxContext.SetDynamicDescriptor(2, 1, g_surface_cache_final.GetSRV());
+	}
+	else if (GetGlobalResource().m_visualize_type == 8)
+	{
+		gfxContext.SetDynamicDescriptor(2, 1, g_trace_radiance_atlas.GetSRV());
+	}
+	else if (GetGlobalResource().m_visualize_type == 10)
+	{
+		gfxContext.SetDynamicDescriptor(2, 1, g_trace_radiance_atlas_filtered.GetSRV());
 	}
 	
 	gfxContext.SetVertexBuffer(0, m_scache_vis_pos_buffer.VertexBufferView());

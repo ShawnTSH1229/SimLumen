@@ -6,15 +6,20 @@ cbuffer CBLumenSceneInfo : register(b0)
 };
 
 Texture2D<float4> trace_radiance_atlas : register(t0);
-StructuredBuffer<SCardInfo> scene_card_infos : register(t0);
+StructuredBuffer<SCardInfo> scene_card_infos : register(t1);
+Texture2D<float4> scene_card_albedo : register(t2);
+Texture2D<float4> scene_card_normal : register(t3);
+Texture2D<float> scene_card_depth : register(t4);
 
 RWTexture2D<float4> radiosity_probe_sh_red_atlas : register(u0);
-RWTexture2D<float4> radiosity_probe_sh_blue_atlas : register(u1);
-RWTexture2D<float4> radiosity_probe_sh_green_atlas : register(u2);
+RWTexture2D<float4> radiosity_probe_sh_green_atlas : register(u1);
+RWTexture2D<float4> radiosity_probe_sh_blue_atlas : register(u2);
 
 #include "SimLumenRadiosityCommon.hlsl"
 #include "SimLumenSurfaceCacheCommon.hlsl"
 
+#define CONVERT_SH_GROUP_SIZE 8
+[numthreads(CONVERT_SH_GROUP_SIZE, CONVERT_SH_GROUP_SIZE, 1)]
 void LumenRadiosityConvertToSH(uint3 thread_index : SV_DispatchThreadID)
 {
     uint2 tile_idx = thread_index.xy;
@@ -32,7 +37,7 @@ void LumenRadiosityConvertToSH(uint3 thread_index : SV_DispatchThreadID)
         for(uint trace_idx_y = 0; trace_idx_y < SURFACE_CACHE_PROBE_TEXELS_SIZE; trace_idx_y++)
         {
             uint2 pixel_logic_pos = probe_start_pos + uint2(trace_idx_x, trace_idx_y);
-            uint2 pixel_atlas_pos = (pixel_logic_pos.x, SURFACE_CACHE_TEX_SIZE - pixel_logic_pos.y);
+            uint2 pixel_atlas_pos = uint2(pixel_logic_pos.x, SURFACE_CACHE_TEX_SIZE - pixel_logic_pos.y);
 
             SCardData card_data = GetSurfaceCardData(card_info, float2(uint2(pixel_logic_pos.xy % 128u)) / 128.0f, pixel_atlas_pos.xy);
 
@@ -42,13 +47,19 @@ void LumenRadiosityConvertToSH(uint3 thread_index : SV_DispatchThreadID)
             GetRadiosityRay(tile_idx, sub_tile_pos, card_data.world_normal, world_ray, pdf);
 
             float3 trace_irradiance = trace_radiance_atlas.Load(int3(pixel_atlas_pos.xy, 0)).xyz;
+
             irradiance_sh = AddSH(irradiance_sh, MulSH(SHBasisFunction(world_ray), trace_irradiance / pdf));
 			num_valid_sample += 1.0f;
         }
     }
 
+    if (num_valid_sample > 0)
+	{
+		irradiance_sh = MulSH(irradiance_sh, 1.0f / num_valid_sample);
+	}
+
     uint2 tile_atlas_index = uint2(tile_idx.x, SURFACE_CACHE_ATLAS_TILE_NUM - tile_idx.y);
     radiosity_probe_sh_red_atlas[tile_atlas_index] = irradiance_sh.R.V;
-	radiosity_probe_sh_blue_atlas[tile_atlas_index] = irradiance_sh.G.V;
-	radiosity_probe_sh_green_atlas[tile_atlas_index] = irradiance_sh.B.V;
+	radiosity_probe_sh_green_atlas[tile_atlas_index] = irradiance_sh.G.V;
+	radiosity_probe_sh_blue_atlas[tile_atlas_index] = irradiance_sh.B.V;
 }

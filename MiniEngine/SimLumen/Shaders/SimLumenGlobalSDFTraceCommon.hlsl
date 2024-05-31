@@ -10,7 +10,7 @@ float SampleGlobalSDF(float3 sample_position_world_space)
     float3 sample_sdf_offset = sample_position_world_space - global_sdf_min_pos;
     float3 sample_sdf_index_xyz = sample_sdf_offset / gloabl_sdf_voxel_size;
     float3 sample_sdf_uvw = sample_sdf_index_xyz / global_sdf_tex_size_xyz;
-    float distance = global_sdf_texture.Sample(g_global_sdf_sampler, sample_sdf_uvw); // todo: fix me 
+    float distance = global_sdf_texture.SampleLevel(g_global_sdf_sampler, sample_sdf_uvw,0); // todo: fix me 
     return distance * global_sdf_scale_x + global_sdf_scale_y;
 }
 

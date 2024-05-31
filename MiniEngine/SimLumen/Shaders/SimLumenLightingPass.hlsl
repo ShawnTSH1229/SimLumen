@@ -40,7 +40,6 @@ struct LightProperties
 };
 
 // Numeric constants
-static const float PI = 3.14159265;
 static const float3 kDielectricSpecular = float3(0.04, 0.04, 0.04);
 
 float Pow5(float x)
@@ -157,7 +156,7 @@ float4 ps_main(in float2 Tex : TexCoord0, in float4 screen_pos : SV_Position) : 
         // point light
         {
             float3 point_light_direction = point_light_world_pos - world_position;
-            float3 light_dist = length(point_light_direction);
+            float light_dist = length(point_light_direction);
             float attenuation = saturate((point_light_radius - light_dist) / point_light_radius);
             colorAccum += ShadeDirectionalLight(Surface, normalize(point_light_direction), float3(1,1,1)) * attenuation * attenuation;
         }

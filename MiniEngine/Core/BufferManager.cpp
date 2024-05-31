@@ -40,6 +40,12 @@ namespace Graphics
     ColorBuffer g_surface_cache_final;
 
     ColorBuffer g_trace_radiance_atlas;
+    ColorBuffer g_trace_radiance_atlas_filtered;
+
+    ColorBuffer g_radiosity_probe_sh_red_atlas;
+    ColorBuffer g_radiosity_probe_sh_blue_atlas;
+    ColorBuffer g_radiosity_probe_sh_green_atlas;
+
 
     ColorBuffer g_GBufferA;
     ColorBuffer g_GBufferB;
@@ -133,11 +139,19 @@ void Graphics::InitializeRenderingBuffers( uint32_t bufferWidth, uint32_t buffer
         g_atlas_albedo.Create(L"g_atlas_albedo", 2048, 2048, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);
         g_atlas_normal.Create(L"g_atlas_normal", 2048, 2048, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);
         g_atlas_depth.Create(L"g_atlas_depth", 2048, 2048,1, DXGI_FORMAT_R32_FLOAT, esram);
+
         g_atlas_copy_depth.Create(L"g_atlas_copy_depth", 2048, 2048, 1, DSV_FORMAT, esram);
+
         g_surface_cache_direct.Create(L"g_surface_cache_direct", 2048, 2048, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
         g_surface_cache_indirect.Create(L"g_surface_cache_indirect", 2048, 2048, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
         g_surface_cache_final.Create(L"g_surface_cache_final", 2048, 2048, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
+
         g_trace_radiance_atlas.Create(L"g_trace_radiance_atlas", 2048, 2048, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
+        g_trace_radiance_atlas_filtered.Create(L"g_trace_radiance_atlas_filtered", 2048, 2048, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
+
+        g_radiosity_probe_sh_red_atlas.Create(L"g_radiosity_probe_sh_red_atlas", 2048 / 4, 2048 / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
+        g_radiosity_probe_sh_blue_atlas.Create(L"g_radiosity_probe_sh_blue_atlas", 2048 / 4, 2048 / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
+        g_radiosity_probe_sh_green_atlas.Create(L"g_radiosity_probe_sh_green_atlas", 2048 / 4, 2048 / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, esram);
 
         g_GBufferA.Create(L"g_GBufferA", bufferWidth, bufferHeight, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);
         g_GBufferB.Create(L"g_GBufferB", bufferWidth, bufferHeight, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);

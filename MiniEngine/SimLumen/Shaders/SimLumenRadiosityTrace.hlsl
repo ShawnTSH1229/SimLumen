@@ -1,10 +1,13 @@
 #include "SimLumenCommon.hlsl"
 
-#define MAX_FRAME_ACCUMULATED 4
-
 cbuffer CBLumenSceneInfo : register(b0)
 {
     GLOBAL_LUMEN_SCENE_INFO
+};
+
+cbuffer CMeshSdfBrickTextureInfo : register(b1)
+{
+    GLOBAL_SDF_BUFFER_MEMBER
 };
 
 StructuredBuffer<SCardInfo> scene_card_infos : register(t0);
@@ -22,7 +25,7 @@ RWTexture2D<float4> trace_radiance_atlas : register(u0);
 #include "SimLumenSurfaceCacheCommon.hlsl"
 #include "SimLumenGlobalSDFTraceCommon.hlsl"
 
-// 512 * 2048 / 256
+//2048 / 16, 512 / 16 
 #define RADIOSITY_TRACE_THREADGROUP_SIZE 16
 [numthreads(RADIOSITY_TRACE_THREADGROUP_SIZE, RADIOSITY_TRACE_THREADGROUP_SIZE, 1)]
 void LumenRadiosityDistanceFieldTracingCS(uint3 thread_index : SV_DispatchThreadID)
@@ -58,7 +61,7 @@ void LumenRadiosityDistanceFieldTracingCS(uint3 thread_index : SV_DispatchThread
         GetRadiosityRay(tile_idx, sub_tile_pos, card_data.world_normal, world_ray, pdf);
 
         SGloablSDFHitResult hit_result = (SGloablSDFHitResult)0;
-        TraceGlobalSDF(card_data.world_position, world_ray, hit_result);
+        TraceGlobalSDF(card_data.world_position + card_data.world_normal * gloabl_sdf_voxel_size * 2.0, world_ray, hit_result);
 
         int max_dir_idx = -1;
         float max_dir = 0.0;
@@ -91,10 +94,20 @@ void LumenRadiosityDistanceFieldTracingCS(uint3 thread_index : SV_DispatchThread
         {
             if(hit_result.bHit)
             {
-                float3 hit_world_position = world_ray * hit_result.hit_distance + card_data.world_position;
+                float3 hit_world_position = 
+                    world_ray * (hit_result.hit_distance - gloabl_sdf_voxel_size) + 
+                    card_data.world_position + 
+                    card_data.world_normal * gloabl_sdf_voxel_size * 2.0;
+
                 uint voxel_index_1d = GetVoxelIndexFromWorldPos(hit_world_position);
                 SVoxelLighting voxel_lighting = scene_voxel_lighting[voxel_index_1d];
-                radiance = voxel_lighting.final_lighting;
+                radiance = voxel_lighting.final_lighting[max_dir_idx] * (1.0 / PI);
+
+                float max_lighting = max(radiance.x, max(radiance.y, radiance.z));
+                if(max_lighting > 1* (1.0 / PI))
+                {
+                    radiance *= (1* (1.0 / PI) / max_lighting);
+                }
             }
             else
             {

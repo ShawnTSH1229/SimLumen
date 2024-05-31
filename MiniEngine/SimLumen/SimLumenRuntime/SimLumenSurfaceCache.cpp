@@ -22,7 +22,7 @@ void CSimLumenSurfaceCache::Init()
     {
         m_scache_combine_light_sig.Reset(3, 0);
         m_scache_combine_light_sig[0].InitAsConstantBuffer(0);
-        m_scache_combine_light_sig[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2);
+        m_scache_combine_light_sig[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3);
         m_scache_combine_light_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
         m_scache_combine_light_sig.Finalize(L"m_scache_combine_light_sig");
 
@@ -84,12 +84,14 @@ void CSimLumenSurfaceCache::SurfaceCacheCombineLighting()
 
 	cptContext.TransitionResource(g_surface_cache_direct, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	cptContext.TransitionResource(g_surface_cache_indirect, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	cptContext.FlushResourceBarriers();
 
 	cptContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
 	cptContext.SetDynamicDescriptor(1, 0, g_surface_cache_direct.GetSRV());
 	cptContext.SetDynamicDescriptor(1, 1, g_surface_cache_indirect.GetSRV());
+	cptContext.SetDynamicDescriptor(1, 2, g_atlas_albedo.GetSRV());
 	cptContext.SetDynamicDescriptor(2, 0, g_surface_cache_final.GetUAV());
 
 	cptContext.Dispatch(GetGlobalResource().m_atlas_size.x / 8, GetGlobalResource().m_atlas_size.y / 8, 1);
@@ -98,7 +100,7 @@ void CSimLumenSurfaceCache::SurfaceCacheCombineLighting()
 
 void CSimLumenSurfaceCache::SurfaceCacheInjectLighting()
 {
-	ComputeContext& cptContext = ComputeContext::Begin(L"SurfaceCacheCombineLighting");
+	ComputeContext& cptContext = ComputeContext::Begin(L"SurfaceCacheInjectLighting");
 
 	cptContext.SetRootSignature(m_scache_inject_light_sig);
 	cptContext.SetPipelineState(m_scache_inject_light_pso);

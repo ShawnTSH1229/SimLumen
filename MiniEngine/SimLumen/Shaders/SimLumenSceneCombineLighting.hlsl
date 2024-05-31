@@ -8,6 +8,7 @@ cbuffer SceneVoxelVisibilityInfo : register(b0)
 
 Texture2D<float4> surface_cache_direct_lighting : register(t0);
 Texture2D<float4> surface_cache_indirect_lighting : register(t1);
+Texture2D<float4> surface_cache_albedo : register(t2);
 RWTexture2D<float4> surface_cache_combine_lighting : register(u0);
 
 [numthreads(CARD_TILE_SIZE, CARD_TILE_SIZE, 1)]
@@ -21,7 +22,8 @@ void LumenSceneCombineLightingCS(uint3 group_idx : SV_GroupID, uint3 group_threa
         pixel_pos.y = (SURFACE_CACHE_TEX_SIZE - pixel_pos.y);
         float3 direct_lighting = surface_cache_direct_lighting.Load(int3(pixel_pos,0)).xyz;
         float3 indirect_lighting = surface_cache_indirect_lighting.Load(int3(pixel_pos,0)).xyz;
+        float3 albedo = surface_cache_albedo.Load(int3(pixel_pos,0)).xyz;
 
-        surface_cache_combine_lighting[int2(pixel_pos.xy)] = float4(direct_lighting + indirect_lighting, 1.0);
+        surface_cache_combine_lighting[int2(pixel_pos.xy)] = float4(direct_lighting + indirect_lighting * albedo, 1.0);
     }
 }

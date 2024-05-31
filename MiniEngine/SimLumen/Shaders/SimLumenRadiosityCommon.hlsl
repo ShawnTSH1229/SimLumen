@@ -20,16 +20,20 @@ uint3 Rand3DPCG16(int3 p)
 	return v >> 16u;
 }
 
+#define JITTER_DEBUG true
+
 float2 GetProbeTexelCenter(uint IndirectLightingTemporalIndex, uint2 ProbeTileCoord)
 {
+    uint TemporalIndex = JITTER_DEBUG ? 0 : IndirectLightingTemporalIndex;
     uint2 RandomSeed = Rand3DPCG16(int3(ProbeTileCoord, 0)).xy;
-	return Hammersley16(IndirectLightingTemporalIndex % MAX_FRAME_ACCUMULATED, MAX_FRAME_ACCUMULATED, RandomSeed);
+	return Hammersley16(TemporalIndex % MAX_FRAME_ACCUMULATED, MAX_FRAME_ACCUMULATED, RandomSeed);
 }
 
 /* 0 - 3 */
 uint2 GetProbeJitter(uint IndirectLightingTemporalIndex)
 {
-	return Hammersley16(IndirectLightingTemporalIndex % MAX_FRAME_ACCUMULATED, MAX_FRAME_ACCUMULATED, 0) * SURFACE_CACHE_PROBE_TEXELS_SIZE;
+    uint TemporalIndex = JITTER_DEBUG ? 0 : IndirectLightingTemporalIndex;
+	return Hammersley16(TemporalIndex % MAX_FRAME_ACCUMULATED, MAX_FRAME_ACCUMULATED, 0) * SURFACE_CACHE_PROBE_TEXELS_SIZE;
 }
 
 // PDF = NoL / PI
@@ -83,4 +87,12 @@ void GetRadiosityRay(uint2 tile_index, uint2 sub_tile_pos, float3 world_normal, 
     float3x3 tangent_basis = GetTangentBasisFrisvad(world_normal);
     world_ray = mul(local_ray_direction, tangent_basis);
     world_ray = normalize(world_ray);
+}
+
+uint GetVoxelIndexFromWorldPos(float3 world_position)
+{
+    float3 voxel_offset = world_position - scene_voxel_min_pos;
+    uint3 voxel_index_3d = voxel_offset / voxel_size;
+    uint voxel_index_1d = voxel_index_3d.z * uint(SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y) + voxel_index_3d.y * SCENE_VOXEL_SIZE_X + voxel_index_3d.x;
+    return voxel_index_1d;
 }

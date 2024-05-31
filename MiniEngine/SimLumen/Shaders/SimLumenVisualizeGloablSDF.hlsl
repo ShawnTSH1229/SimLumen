@@ -24,22 +24,7 @@ cbuffer SLumenGlobalConstants : register(b0)
 
 cbuffer CMeshSdfBrickTextureInfo : register(b1)
 {
-    // scene sdf infomation
-    uint2 texture_brick_num_xy;
-    float2 sdf_cb_padding0;
-
-    uint3 texture_size_xyz;
-    uint scene_mesh_sdf_num;
-    
-    // global sdf infomation
-    float gloabl_sdf_voxel_size;
-    float3 gloabl_sdf_center;
-
-    float3 global_sdf_extents;
-    float global_sdf_scale_x;
-
-    float3 global_sdf_tex_size_xyz;
-    float global_sdf_scale_y;
+    GLOBAL_SDF_BUFFER_MEMBER
 };
 
 

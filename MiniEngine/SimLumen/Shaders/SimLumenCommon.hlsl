@@ -9,6 +9,8 @@
 #define SCENE_VOXEL_SIZE_Y 48
 #define SCENE_VOXEL_SIZE_Z 160
 
+#define MAX_FRAME_ACCUMULATED 4
+
 #define SCENE_SDF_NUM 13
 #define SURFACE_CACHE_TEX_SIZE 2048
 #define SURFACE_CACHE_CARD_SIZE 128
@@ -39,6 +41,18 @@
     uint card_num_xy;\
     uint scene_card_num;\
     uint frame_index;
+
+#define GLOBAL_SDF_BUFFER_MEMBER\
+    uint2 texture_brick_num_xy;\
+    float2 sdf_cb_padding0;\
+    uint3 texture_size_xyz;\
+    uint scene_mesh_sdf_num;\
+    float gloabl_sdf_voxel_size;\
+    float3 gloabl_sdf_center;\
+    float3 global_sdf_extents;\
+    float global_sdf_scale_x;\
+    float3 global_sdf_tex_size_xyz;\
+    float global_sdf_scale_y;\
 
 struct STraceResult
 {
@@ -131,13 +145,7 @@ float2 GetCardUVFromWorldPos(SCardInfo card_info, float3 world_pos)
     return uv;
 }
 
-uint GetVoxelIndexFromWorldPos(float3 world_position)
-{
-    float3 voxel_offset = world_position - scene_voxel_min_pos;
-    uint3 voxel_index_3d = voxel_offset / voxel_size;
-    uint voxel_index_1d = voxel_index_3d.z * uint(SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y) + voxel_index_3d.y * SCENE_VOXEL_SIZE_X + voxel_index_3d.x;
-    return voxel_index_1d;
-}
+
 
 // From Unreal Engine SHCommon.ush:[BEGIN]
 struct FOneBandSHVector
