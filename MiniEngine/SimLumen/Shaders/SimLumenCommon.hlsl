@@ -341,4 +341,19 @@ float3 EquiAreaSphericalMapping(float2 UV)
 	);
 }
 // Copy From Unreal Engine MonteCarlo.ush:[END]
+
+// Copy From Unreal Engine:[BEGIN]
+uint PackRayInfo(uint2 TexelCoord, uint Level)
+{
+	// Pack in 16 bits
+	return (TexelCoord.x & 0x3F) | ((TexelCoord.y & 0x3F) << 6) | ((Level & 0xF) << 12);
+}
+
+void UnpackRayInfo(uint RayInfo, out uint2 TexelCoord, out uint Level)
+{
+	TexelCoord.x = RayInfo & 0x3F;
+	TexelCoord.y = (RayInfo >> 6) & 0x3F;
+	Level = (RayInfo >> 12) & 0xF;
+}
+// Copy From Unreal Engine:[END]
 #endif

@@ -12,9 +12,11 @@ public:
 private:
 	void InitBrdfPdfPso();
 	void InitLightPdfPso();
+	void InitStructuredISPso();
 
 	void LightingPdfSH(ComputeContext& cptContext);
 	void BRDFPdfSH(ComputeContext& cptContext);
+	void BuildStructuredIS(ComputeContext& cptContext);
 
 	RootSignature m_brdf_pdf_sig;
 	ComputePSO m_brdf_pdf_pso;
@@ -23,7 +25,9 @@ private:
 
 	RootSignature m_light_pdf_sig;
 	ComputePSO m_light_pdf_pso;
-
 	RootSignature m_light_hist_pdf_sig;
 	ComputePSO m_light_hist_pdf_pso;
+
+	RootSignature m_sturct_is_sig;
+	ComputePSO m_struct_is_pso;
 };

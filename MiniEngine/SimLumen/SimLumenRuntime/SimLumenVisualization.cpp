@@ -114,7 +114,7 @@ void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
 	gfxContext.SetConstantBuffer(1, GetGlobalResource().m_mesh_sdf_brick_tex_info);
 	gfxContext.SetDynamicDescriptor(2, 0, m_sdf_instance_buffer.GetSRV());
 	gfxContext.SetDynamicDescriptor(2, 1, GetGlobalResource().m_scene_sdf_infos_gpu.GetSRV());
-	gfxContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
+	gfxContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_scene_mesh_sdf_brick_texture.GetSRV());
 	gfxContext.SetDynamicSampler(4, 0, SamplerPointClamp);
 	gfxContext.SetVertexBuffer(0, m_sdf_vis_pos_buffer.VertexBufferView());
 	gfxContext.SetVertexBuffer(1, m_sdf_vis_direction_buffer.VertexBufferView());

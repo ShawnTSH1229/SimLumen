@@ -19,7 +19,7 @@ cbuffer CLumenViewInfo : register(b1)
 Texture2D<float4> gbuffer_b         : register(t0);
 Texture2D<float> gbuffer_depth      : register(t1);
 
-RWStructuredBuffer<float> brdf_pdf_sh : register(u0); //todo: clear
+RWStructuredBuffer<float> brdf_pdf_sh : register(u0);
 #if ENABLE_VIS_BRDF_PDF
 RWTexture2D<float> brdf_pdf_visualize : register(u1);
 #endif
