@@ -8,7 +8,7 @@ class CSimLumenVoxelScene
 {
 public:
 	void Init();
-	void UpdateVisibilityBuffer();
+	void UpdateVisibilityBuffer(ComputeContext& cptContext);
 
 private:
 

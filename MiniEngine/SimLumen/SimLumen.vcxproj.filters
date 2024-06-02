@@ -81,6 +81,9 @@
     <ClCompile Include="SimLumenRuntime\SimLumenRadiosity.cpp">
       <Filter>Source Files\Runtime</Filter>
     </ClCompile>
+    <ClCompile Include="SimLumenRuntime\SimLumenFinalGather.cpp">
+      <Filter>Source Files\Runtime</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -163,6 +166,9 @@
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="SimLumenRuntime\SimLumenRadiosity.h">
+      <Filter>Source Files\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="SimLumenRuntime\SimLumenFinalGather.h">
       <Filter>Source Files\Runtime</Filter>
     </ClInclude>
   </ItemGroup>

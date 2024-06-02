@@ -72,6 +72,7 @@
     <ClInclude Include="SimLumenMeshBuilder\SimLumenObjLoader.h" />
     <ClInclude Include="SimLumenMeshBuilder\tiny_obj_loader.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenCardCapture.h" />
+    <ClInclude Include="SimLumenRuntime\SimLumenFinalGather.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenGBufferGeneration.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenGlobalResource.h" />
     <ClInclude Include="SimLumenRuntime\SimLumenLightingPass.h" />
@@ -95,6 +96,7 @@
     <ClCompile Include="SimLumenMeshBuilder\SimLumenMeshSDFBuilder.cpp" />
     <ClCompile Include="SimLumenMeshBuilder\SimLumenObjLoader.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenCardCapture.cpp" />
+    <ClCompile Include="SimLumenRuntime\SimLumenFinalGather.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenGBufferGeneration.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenGlobalResource.cpp" />
     <ClCompile Include="SimLumenRuntime\SimLumenLightingPass.cpp" />

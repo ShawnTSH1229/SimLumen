@@ -22,6 +22,7 @@
 #include "SimLumenRuntime/SimLumenLightingPass.h"
 #include "SimLumenRuntime/SimLumenSurfaceCache.h"
 #include "SimLumenRuntime/SimLumenRadiosity.h"
+#include "SimLumenRuntime/SimLumenFinalGather.h"
 
 using namespace GameCore;
 using namespace Graphics;
@@ -55,6 +56,7 @@ private:
     CSimLumenLightingPass m_lighting_pass;
     CSimLumenSurfaceCache m_lumen_surface_cache;
     CSimLumenRadiosity m_radiosity_pass;
+    CSimLumenFinalGather m_final_gather;
 };
 
 CREATE_APPLICATION( SimLumen )
@@ -104,6 +106,7 @@ void SimLumen::Startup( void )
     m_lighting_pass.Init();
     m_lumen_surface_cache.Init();
     m_radiosity_pass.Init();
+    m_final_gather.Init();
 }
 
 namespace Graphics
@@ -145,35 +148,46 @@ void SimLumen::Update( float deltaT )
     VIS_KEY_PRESS(9);
 
     VIS_KEY_PRESS_NUM(t, 10);
-    VIS_KEY_PRESS_NUM(u, 10);
-    VIS_KEY_PRESS_NUM(i, 10);
-    VIS_KEY_PRESS_NUM(o,10);
+    VIS_KEY_PRESS_NUM(y, 11);
+    VIS_KEY_PRESS_NUM(u, 12);
+    VIS_KEY_PRESS_NUM(i, 13);
+    VIS_KEY_PRESS_NUM(o, 14);
 
     GetGlobalResource().m_lumen_scene_info.frame_num++;
 }
 
 void SimLumen::RenderScene( void )
 {
-    GraphicsContext& gfxContext = GraphicsContext::Begin(L"Scene Render");
-    UpdateConstantBuffer(gfxContext);
-    m_lumen_vox_scene.UpdateVisibilityBuffer();
-    m_card_capturer.UpdateSceneCards();
-    m_lumen_surface_cache.SurfaceCacheDirectLighting();
-    m_lumen_surface_cache.SurfaceCacheCombineLighting();
-    m_lumen_surface_cache.SurfaceCacheInjectLighting();
-    m_radiosity_pass.RadiosityTrace();
-    m_shadowpass.RenderingShadowMap(gfxContext);
-    m_gbuffer_generation.Rendering(gfxContext);
-    m_lighting_pass.Rendering(gfxContext);
-    m_lumen_visualizer.Render(gfxContext);
-    gfxContext.Finish();
+    {
+        GraphicsContext& gfxContext = GraphicsContext::Begin(L"PreProcess");
+        UpdateConstantBuffer(gfxContext);
+        m_card_capturer.UpdateSceneCards(gfxContext);
+        m_shadowpass.RenderingShadowMap(gfxContext);
+        m_gbuffer_generation.Rendering(gfxContext);
+        gfxContext.Finish();
+    }
+    
+    {
+        ComputeContext& cptContext = ComputeContext::Begin(L"Lumen Scene Updata");
+        m_lumen_vox_scene.UpdateVisibilityBuffer(cptContext);
+        m_lumen_surface_cache.SurfaceCacheDirectLighting(cptContext);
+        m_lumen_surface_cache.SurfaceCacheCombineLighting(cptContext);
+        m_lumen_surface_cache.SurfaceCacheInjectLighting(cptContext);
+        m_radiosity_pass.RadiosityTrace(cptContext);
+        m_final_gather.Rendering(cptContext);
+        cptContext.Finish();
+    }
+
+    {
+        GraphicsContext& gfxContext = GraphicsContext::Begin(L"Lighting");
+        m_lighting_pass.Rendering(gfxContext);
+        m_lumen_visualizer.Render(gfxContext);
+        gfxContext.Finish();
+    }
 }
 
 void SimLumen::UpdateConstantBuffer(GraphicsContext& cbUpdateContext)
 {
-    
-    EngineProfiling::BeginBlock(L"UpdateConstantBuffer");
-
     SLumenViewGlobalConstant globals;
     globals.ViewProjMatrix = m_Camera.GetViewProjMatrix();
     globals.CameraPos = m_Camera.GetPosition();
@@ -208,5 +222,4 @@ void SimLumen::UpdateConstantBuffer(GraphicsContext& cbUpdateContext)
     DynAlloc gloabl_sdf = cbUpdateContext.ReserveUploadMemory(sizeof(SMeshSdfBrickTextureInfo));
     memcpy(gloabl_sdf.DataPtr, &global_sdf_info, sizeof(SMeshSdfBrickTextureInfo));
     GetGlobalResource().m_mesh_sdf_brick_tex_info = gloabl_sdf.GpuAddress;
-    EngineProfiling::EndBlock();
 }

@@ -11,6 +11,7 @@
 #define SCENE_VOXEL_SIZE_Z 160
 
 #define SIMLUMEN_SHADOW_DIMENSION 384
+#define SCREEN_SPACE_PROBE_SIZE 8
 
 struct SMeshSDFInfo
 {
@@ -65,7 +66,7 @@ __declspec(align(256)) struct SMeshSdfBrickTextureInfo
 __declspec(align(256)) struct SLumenSceneInfo
 {
 	DirectX::XMFLOAT3 scene_voxel_min_pos;
-	float padding;
+	float padding1;
 
 	DirectX::XMFLOAT3 scene_voxel_max_pos;
 	float voxel_size;
@@ -73,6 +74,13 @@ __declspec(align(256)) struct SLumenSceneInfo
 	uint32_t card_num_xy;
 	uint32_t scene_card_num;
 	uint32_t frame_num;
+
+	uint32_t padding2;
+
+	uint32_t is_pdf_thread_size_x;
+	uint32_t is_pdf_thread_size_y;
+	uint32_t screen_probe_size_x;
+	uint32_t screen_probe_size_y;
 };
 
 struct SVoxelDirVisInfo
@@ -141,6 +149,10 @@ struct SSimLumenGlobalResource
 
 	Math::Matrix4 m_shadow_vpmatrix;
 
+	//final gather resource
+	StructuredBuffer m_brdf_pdf_sh;
+	ColorBuffer m_brdf_pdf_visualize;
+
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal
 	// 3: visualize surface cache albedo
@@ -150,7 +162,9 @@ struct SSimLumenGlobalResource
 	// 7: visualize surface cache final lighting
 	// 8: visualize radiosity trace result
 	// 9: visualize voxel lighting
-	// T : visualize filtered radiosity
+	// T/10 : visualize filtered radiosity
+	// Y/11 : visualize Filtered radiance
+	// U/12 : visualize brdf pdf
 	int m_visualize_type;
 };
 

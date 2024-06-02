@@ -163,11 +163,30 @@ void InitSceneCardInfo()
 	gSimLumenGlobalResource.m_scene_card_infos_gpu.Create(L"m_scene_card_infos_gpu", scene_card_infos.size(), sizeof(SCardInfo), scene_card_infos.data());
 }
 
+void InitFinalGatherResource()
+{
+	uint32_t screen_width = g_SceneColorBuffer.GetWidth();
+	uint32_t screen_height = g_SceneColorBuffer.GetHeight();
+	
+	uint32_t screen_probe_num_x = (screen_width + SCREEN_SPACE_PROBE_SIZE - 1) / SCREEN_SPACE_PROBE_SIZE;
+	uint32_t screen_probe_num_y = (screen_height + SCREEN_SPACE_PROBE_SIZE - 1) / SCREEN_SPACE_PROBE_SIZE;
+	
+	gSimLumenGlobalResource.m_lumen_scene_info.screen_probe_size_x = screen_probe_num_x;
+	gSimLumenGlobalResource.m_lumen_scene_info.screen_probe_size_y = screen_probe_num_y;
+	
+	gSimLumenGlobalResource.m_lumen_scene_info.is_pdf_thread_size_x = screen_probe_num_x * SCREEN_SPACE_PROBE_SIZE;
+	gSimLumenGlobalResource.m_lumen_scene_info.is_pdf_thread_size_y = screen_probe_num_y * SCREEN_SPACE_PROBE_SIZE;
+
+	gSimLumenGlobalResource.m_brdf_pdf_visualize.Create(L"m_brdf_pdf_visualize", screen_width, screen_height, 1, DXGI_FORMAT_R16_FLOAT);
+	gSimLumenGlobalResource.m_brdf_pdf_sh.Create(L"m_brdf_pdf_sh", screen_probe_num_x * screen_probe_num_y, sizeof(float));
+}
+
 void InitGlobalResource()
 {
 	InitMeshSDFs();
 	InitGlobalSDF();
 	InitSceneCardInfo();
+	InitFinalGatherResource();
 
 	XMFLOAT3 vtx_pos[6] = {
 	XMFLOAT3(1,0,0),XMFLOAT3(1,1,0),XMFLOAT3(0,0,0),

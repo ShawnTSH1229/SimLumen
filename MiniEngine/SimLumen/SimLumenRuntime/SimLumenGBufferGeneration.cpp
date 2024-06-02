@@ -44,7 +44,7 @@ void CSimLumenGBufferGeneration::Init()
 
 void CSimLumenGBufferGeneration::Rendering(GraphicsContext& gfxContext)
 {
-    EngineProfiling::BeginBlock(L"CSimLumenGBufferGeneration");
+    //GraphicsContext& gfxContext = GraphicsContext::Begin(L"CSimLumenGBufferGeneration");
     gfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
     gfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
     gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, false);
@@ -81,5 +81,9 @@ void CSimLumenGBufferGeneration::Rendering(GraphicsContext& gfxContext)
 
         gfxContext.DrawIndexed(lumen_mesh_instance.m_mesh_resource.m_indices.size());
     }
-    EngineProfiling::EndBlock();
+    gfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    gfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    gfxContext.FlushResourceBarriers();
+    //gfxContext.Finish();
 }

@@ -62,20 +62,20 @@ void CSimLumenRadiosity::Init()
 	}
 }
 
-void CSimLumenRadiosity::RadiosityTrace()
+void CSimLumenRadiosity::RadiosityTrace(ComputeContext& cptContext)
 {
-	ComputeContext& cptContext = ComputeContext::Begin(L"RadiosityTrace");
+	//ComputeContext& cptContext = ComputeContext::Begin(L"RadiosityTrace");
 
 	// radiosity trace
 	{
 		cptContext.SetRootSignature(m_radiosity_trace_sig);
 		cptContext.SetPipelineState(m_radiosity_trace_pso);
 
-		cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cptContext.TransitionResource(g_trace_radiance_atlas, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		cptContext.FlushResourceBarriers();
 
@@ -101,8 +101,8 @@ void CSimLumenRadiosity::RadiosityTrace()
 		cptContext.SetRootSignature(m_radiosity_filter_sig);
 		cptContext.SetPipelineState(m_radiosity_filter_pso);
 
-		cptContext.TransitionResource(g_trace_radiance_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_trace_radiance_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cptContext.TransitionResource(g_trace_radiance_atlas_filtered, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		cptContext.FlushResourceBarriers();
 
@@ -118,11 +118,11 @@ void CSimLumenRadiosity::RadiosityTrace()
 		cptContext.SetRootSignature(m_radiosity_convertsh_sig);
 		cptContext.SetPipelineState(m_radiosity_convertsh_pso);
 
-		cptContext.TransitionResource(g_trace_radiance_atlas_filtered, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_trace_radiance_atlas_filtered, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 		cptContext.TransitionResource(g_radiosity_probe_sh_red_atlas, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		cptContext.TransitionResource(g_radiosity_probe_sh_green_atlas, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -152,15 +152,15 @@ void CSimLumenRadiosity::RadiosityTrace()
 		cptContext.SetRootSignature(m_radiosity_integrate_sig);
 		cptContext.SetPipelineState(m_radiosity_integrate_pso);
 	
-		cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	
-		cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	
-		cptContext.TransitionResource(g_radiosity_probe_sh_red_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_radiosity_probe_sh_green_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		cptContext.TransitionResource(g_radiosity_probe_sh_blue_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_radiosity_probe_sh_red_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_radiosity_probe_sh_green_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(g_radiosity_probe_sh_blue_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	
 		cptContext.TransitionResource(g_radiosity_probe_sh_green_atlas, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		cptContext.FlushResourceBarriers();
@@ -183,6 +183,6 @@ void CSimLumenRadiosity::RadiosityTrace()
 		//integrate_sh = false;
 	}
 
-	cptContext.Finish();
+	//cptContext.Finish();
 }
 

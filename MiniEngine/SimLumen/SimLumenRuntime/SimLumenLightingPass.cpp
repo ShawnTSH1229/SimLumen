@@ -31,10 +31,11 @@ void CSimLumenLightingPass::Init()
 
 void CSimLumenLightingPass::Rendering(GraphicsContext& gfxContext)
 {
-    gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_READ, false);
-    gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
-    gfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
-    gfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
+    //GraphicsContext& gfxContext = GraphicsContext::Begin(L"CSimLumenLightingPass");
+    gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    gfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    gfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     gfxContext.ClearColor(g_SceneColorBuffer);
     gfxContext.FlushResourceBarriers();
 
@@ -50,4 +51,5 @@ void CSimLumenLightingPass::Rendering(GraphicsContext& gfxContext)
     gfxContext.SetDynamicDescriptors(1, 2, 1, &g_SceneDepthBuffer.GetDepthSRV());
     gfxContext.SetDynamicDescriptors(1, 3, 1, &g_ShadowBuffer.GetDepthSRV());
     gfxContext.Draw(3);
+    //gfxContext.Finish();
 }

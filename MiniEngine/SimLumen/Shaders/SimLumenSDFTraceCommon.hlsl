@@ -132,7 +132,7 @@ float3 CalculateMeshSDFWorldNormal(float3 world_ray_start, float3 world_ray_dire
 {
     SMeshSDFInfo mesh_sdf_info = scene_sdf_infos[hit_result.hit_mesh_index];
     float3 hit_world_position = world_ray_start + world_ray_direction * hit_result.hit_distance;
-    float3 hit_volume_position = mul(mesh_sdf_info.world_to_volume, float4(hit_world_position.xyz,1.0));
+    float3 hit_volume_position = mul(mesh_sdf_info.world_to_volume, float4(hit_world_position.xyz,1.0)).xyz;
     hit_volume_position = clamp(hit_volume_position, mesh_sdf_info.volume_position_center - mesh_sdf_info.volume_position_extent, mesh_sdf_info.volume_position_center + mesh_sdf_info.volume_position_extent);
 
     // volume normal

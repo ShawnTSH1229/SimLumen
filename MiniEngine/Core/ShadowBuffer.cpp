@@ -62,5 +62,5 @@ void ShadowBuffer::BeginRendering( GraphicsContext& Context )
 
 void ShadowBuffer::EndRendering( GraphicsContext& Context )
 {
-    Context.TransitionResource(*this, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    Context.TransitionResource(*this, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 }

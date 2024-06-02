@@ -14,7 +14,7 @@ void LumenRadiositySpatialFilterProbeRadiance(uint3 thread_index : SV_DispatchTh
     float depth = scene_card_depth.Load(int3(pixel_atlas_pos.xy,0));
     if(depth != 0)
     {   
-        float3 center_weight = 2;
+        float center_weight = 2;
         float3 radiance = trace_radiance_atlas.Load(int3(pixel_atlas_pos.xy,0)).xyz * center_weight;
         float total_weight = center_weight;
 
@@ -25,7 +25,7 @@ void LumenRadiositySpatialFilterProbeRadiance(uint3 thread_index : SV_DispatchTh
 	    NeighborOffsets[2] = int2(0, -1);
 	    NeighborOffsets[3] = int2(-1, 0);
 
-        for(int idx = 0; idx < num_samples; idx++)
+        for(uint idx = 0; idx < num_samples; idx++)
         {
             uint2 neig_idx = NeighborOffsets[idx] + thread_index.xy;
             uint2 neig_atlas_pos = uint2(neig_idx.x, SURFACE_CACHE_TEX_SIZE - neig_idx.y);

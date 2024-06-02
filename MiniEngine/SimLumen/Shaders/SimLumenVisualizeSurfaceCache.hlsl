@@ -37,7 +37,7 @@ VSOutput vs_main(VSInput vsInput, uint instance_idx : SV_InstanceID)
     float3 rotate_back_pos = mul((float3x3)card_info.rotate_back_matrix, local_position);
     rotate_back_pos += card_info.bound_center;
 
-    float3 world_position = mul(card_info.local_to_world, float4(rotate_back_pos,1.0));
+    float3 world_position = mul(card_info.local_to_world, float4(rotate_back_pos,1.0)).xyz;
     vsOutput.position = mul(ViewProjMatrix, float4(world_position, 1.0));
     vsOutput.uv = vsInput.uv;
     vsOutput.card_index = instance_idx;

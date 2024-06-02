@@ -18,17 +18,17 @@ void CSimLumenVoxelScene::Init()
 	m_vox_vis_update_pso.Finalize();
 }
 
-void CSimLumenVoxelScene::UpdateVisibilityBuffer()
+void CSimLumenVoxelScene::UpdateVisibilityBuffer(ComputeContext& cptContext)
 {
 	//if (need_update_vis_buffer)
 	{
-		ComputeContext& cptContext = ComputeContext::Begin(L"UpdateVisibilityBuffer");
+		//ComputeContext& cptContext = ComputeContext::Begin(L"UpdateVisibilityBuffer");
 
 		cptContext.SetRootSignature(m_vox_vis_update_sig);
 		cptContext.SetPipelineState(m_vox_vis_update_pso);
 
 		cptContext.TransitionResource(GetGlobalResource().scene_voxel_visibility_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		cptContext.TransitionResource(GetGlobalResource().m_scene_sdf_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		cptContext.TransitionResource(GetGlobalResource().m_scene_sdf_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cptContext.FlushResourceBarriers();
 
 		cptContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
@@ -39,7 +39,7 @@ void CSimLumenVoxelScene::UpdateVisibilityBuffer()
 		cptContext.SetDynamicSampler(5, 0, SamplerPointClamp);
 
 		cptContext.Dispatch(SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z / 64, 6, 1);
-		cptContext.Finish();
+		//cptContext.Finish();
 		need_update_vis_buffer = false;
 	}
 

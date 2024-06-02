@@ -11,10 +11,12 @@ private:
 	void VisualizeGloablSDFs(GraphicsContext& gfxContext);
 	void VisualizeSurfaceCache(GraphicsContext& gfxContext);
 	void VisualizeVoxelLighting(GraphicsContext& gfxContext);
+	void VisualizeFinalGather(GraphicsContext& gfxContext);
 
 	void InitSurfaceCachePSO();
 	void InitSDFVisPSO();
 	void InitVisVoxelLightingPSO();
+	void InitVisFinalGatherPSO();
 
 	void InitSDFVisBuffer();
 	void InitVisVoxelLightBuffer();
@@ -52,4 +54,8 @@ private:
 
 	RootSignature m_vis_voxlight_sig;
 	GraphicsPSO m_vis_voxlight_pso;
+
+	// Visualize Final Gather
+	RootSignature m_vis_final_gather_sig;
+	GraphicsPSO m_vis_final_gather_pso;
 };

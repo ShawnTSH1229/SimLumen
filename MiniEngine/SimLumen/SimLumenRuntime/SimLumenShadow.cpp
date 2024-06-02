@@ -41,7 +41,7 @@ void CSimLumenShadow::Init()
 
 void CSimLumenShadow::RenderingShadowMap(GraphicsContext& gfxContext)
 {
-	EngineProfiling::BeginBlock(L"RenderingShadowMap");
+	//GraphicsContext& gfxContext = GraphicsContext::Begin(L"RenderingShadowMap");
 	gfxContext.SetRootSignature(m_shadow_rendering_sig);
 	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gfxContext.SetPipelineState(m_shadow_rendering_pso);
@@ -61,5 +61,5 @@ void CSimLumenShadow::RenderingShadowMap(GraphicsContext& gfxContext)
 		gfxContext.DrawIndexed(lumen_mesh_instance.m_mesh_resource.m_indices.size());
 	}
 	g_ShadowBuffer.EndRendering(gfxContext);
-	EngineProfiling::EndBlock();
+	//gfxContext.Finish();
 }

@@ -8,7 +8,7 @@ class CSimLumenRadiosity
 {
 public:
 	void Init();
-	void RadiosityTrace();
+	void RadiosityTrace(ComputeContext& cptContext);
 private:
 	RootSignature m_radiosity_trace_sig;
 	ComputePSO m_radiosity_trace_pso;

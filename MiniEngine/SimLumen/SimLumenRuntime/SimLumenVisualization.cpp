@@ -73,7 +73,7 @@ void CSimLumenVisualization::Init()
 
 void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
 {
-	EngineProfiling::BeginBlock(L"CSimLumenVisualization");
+	//GraphicsContext& gfxContext = GraphicsContext::Begin(L"CSimLumenVisualization");
 	if (GetGlobalResource().m_visualize_type == 1)
 	{
 		VisualizeMeshSDFs(gfxContext);
@@ -94,7 +94,7 @@ void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
 	{
 		VisualizeVoxelLighting(gfxContext);
 	}
-	EngineProfiling::EndBlock();
+	//gfxContext.Finish();
 }
 
 void CSimLumenVisualization::VisualizeMeshSDFs(GraphicsContext& gfxContext)
@@ -151,9 +151,9 @@ void CSimLumenVisualization::VisualizeSurfaceCache(GraphicsContext& gfxContext)
 {
 	gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, false);
 	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
-	gfxContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	gfxContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	gfxContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gfxContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gfxContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gfxContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	gfxContext.FlushResourceBarriers();
 	gfxContext.ClearColor(g_SceneColorBuffer);
 	gfxContext.ClearDepth(g_SceneDepthBuffer);
@@ -208,7 +208,7 @@ void CSimLumenVisualization::VisualizeVoxelLighting(GraphicsContext& gfxContext)
 {
 	gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
 	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
-	gfxContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gfxContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	gfxContext.FlushResourceBarriers();
 
 	gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV());

@@ -34,7 +34,7 @@ class CSimLuCardCapturer
 {
 public:
 	void Init();
-	void UpdateSceneCards();
+	void UpdateSceneCards(GraphicsContext& gfxContext);
 private:
 	void CreatePSO();
 

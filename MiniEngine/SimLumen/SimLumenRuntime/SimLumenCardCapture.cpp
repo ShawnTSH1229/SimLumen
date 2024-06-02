@@ -10,12 +10,11 @@ void CSimLuCardCapturer::Init()
     m_gen_cards = true;
 }
 
-void CSimLuCardCapturer::UpdateSceneCards()
+void CSimLuCardCapturer::UpdateSceneCards(GraphicsContext& gfxContext)
 {
-    
     //if (m_need_updata_cards)
     {
-        GraphicsContext& gfxContext = GraphicsContext::Begin(L"UpdateSceneCards");
+        //GraphicsContext& gfxContext = GraphicsContext::Begin(L"UpdateSceneCards");
 
         std::vector<SLumenMeshInstance>& mesh_instances = GetGlobalResource().m_mesh_instances;
         if (m_gen_cards)
@@ -56,7 +55,6 @@ void CSimLuCardCapturer::UpdateSceneCards()
             gfxContext.SetPipelineState(m_card_capture_pso);
 
             Vector3 light_direction_neg[6] = { Vector3(0,0,-1),Vector3(0,0,1), Vector3(0,-1,0), Vector3(0,1,0), Vector3(-1,0,0), Vector3(1,0,0) };
-            //Vector3 up_directions[6] = { Vector3(0,1,0),Vector3(0,1,0), Vector3(0,0,-1), Vector3(0,0,+1), Vector3(0,+1,0), Vector3(0,-1,0) };
             Vector3 up_directions[6] = { Vector3(0,1,0),Vector3(0,1,0), Vector3(0,0,-1), Vector3(0,0,+1), Vector3(0,+1,0), Vector3(0,+1,0)};
 
             for (int idx = 0; idx < mesh_instances.size(); idx++)
@@ -119,15 +117,15 @@ void CSimLuCardCapturer::UpdateSceneCards()
         {
             for (int idx = 0; idx < temp_cards.size(); idx++)
             {
-                gfxContext.TransitionResource(temp_cards[idx].m_temp_card_albedo, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
-                gfxContext.TransitionResource(temp_cards[idx].m_temp_card_normal, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
-                gfxContext.TransitionResource(temp_cards[idx].m_temp_card_depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, false);
+                gfxContext.TransitionResource(temp_cards[idx].m_temp_card_albedo, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                gfxContext.TransitionResource(temp_cards[idx].m_temp_card_normal, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                gfxContext.TransitionResource(temp_cards[idx].m_temp_card_depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             };
 
-            gfxContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
-            gfxContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
-            gfxContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
-            gfxContext.TransitionResource(g_atlas_copy_depth, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+            gfxContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            gfxContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            gfxContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            gfxContext.TransitionResource(g_atlas_copy_depth, D3D12_RESOURCE_STATE_DEPTH_WRITE);
             gfxContext.FlushResourceBarriers();
             gfxContext.ClearDepth(g_atlas_copy_depth);
 
@@ -158,7 +156,14 @@ void CSimLuCardCapturer::UpdateSceneCards()
             }
         }
         m_need_updata_cards = false;
-        gfxContext.Finish();
+
+        gfxContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        gfxContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        gfxContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        gfxContext.TransitionResource(g_atlas_copy_depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        gfxContext.FlushResourceBarriers();
+
+        //gfxContext.Finish();
     }
 }
 

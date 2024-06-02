@@ -11,6 +11,8 @@
 
 #define MAX_FRAME_ACCUMULATED 4
 
+#define SCREEN_SPACE_PROBE 8
+
 #define SCENE_SDF_NUM 13
 #define SURFACE_CACHE_TEX_SIZE 2048
 #define SURFACE_CACHE_CARD_SIZE 128
@@ -40,7 +42,12 @@
     float voxel_size;\
     uint card_num_xy;\
     uint scene_card_num;\
-    uint frame_index;
+    uint frame_index;\
+    uint padding_lumen_info;\
+    uint is_pdf_thread_size_x;\
+    uint is_pdf_thread_size_y;\
+    uint screen_probe_size_x;\
+    uint screen_probe_size_y;\
 
 #define GLOBAL_SDF_BUFFER_MEMBER\
     uint2 texture_brick_num_xy;\
@@ -53,6 +60,7 @@
     float global_sdf_scale_x;\
     float3 global_sdf_tex_size_xyz;\
     float global_sdf_scale_y;\
+
 
 struct STraceResult
 {
@@ -147,7 +155,7 @@ float2 GetCardUVFromWorldPos(SCardInfo card_info, float3 world_pos)
 
 
 
-// From Unreal Engine SHCommon.ush:[BEGIN]
+// Copy From Unreal Engine SHCommon.ush:[BEGIN]
 struct FOneBandSHVector
 {
 	half V;
@@ -171,6 +179,14 @@ struct FTwoBandSHVectorRGB
 	FTwoBandSHVector G;
 	FTwoBandSHVector B;
 };
+
+struct FThreeBandSHVector
+{
+	half4 V0; // 1 + 3
+	half4 V1; // 5
+	half V2;
+};
+
 
 FTwoBandSHVectorRGB MulSH(FTwoBandSHVectorRGB A, half Scalar)
 {
@@ -244,5 +260,81 @@ half3 DotSH(FTwoBandSHVectorRGB A,FTwoBandSHVector B)
 	Result.b = DotSH(A.B,B);
 	return Result;
 }
-// From Unreal Engine SHCommon.ush:[END]
+
+FThreeBandSHVector SHBasisFunction3(half3 InputVector)
+{
+	FThreeBandSHVector Result;
+	// These are derived from simplifying SHBasisFunction in C++
+	Result.V0.x = 0.282095f; 
+	Result.V0.y = -0.488603f * InputVector.y;
+	Result.V0.z = 0.488603f * InputVector.z;
+	Result.V0.w = -0.488603f * InputVector.x;
+
+	half3 VectorSquared = InputVector * InputVector;
+	Result.V1.x = 1.092548f * InputVector.x * InputVector.y;
+	Result.V1.y = -1.092548f * InputVector.y * InputVector.z;
+	Result.V1.z = 0.315392f * (3.0f * VectorSquared.z - 1.0f);
+	Result.V1.w = -1.092548f * InputVector.x * InputVector.z;
+	Result.V2 = 0.546274f * (VectorSquared.x - VectorSquared.y);
+
+	return Result;
+}
+
+FThreeBandSHVector CalcDiffuseTransferSH3(half3 Normal,half Exponent)
+{
+	FThreeBandSHVector Result = SHBasisFunction3(Normal);
+
+	// These formula are scaling factors for each SH band that convolve a SH with the circularly symmetric function
+	// max(0,cos(theta))^Exponent
+	half L0 =					2 * PI / (1 + 1 * Exponent						);
+	half L1 =					2 * PI / (2 + 1 * Exponent						);
+	half L2 = Exponent *		2 * PI / (3 + 4 * Exponent + Exponent * Exponent);
+	half L3 = (Exponent - 1) *	2 * PI / (8 + 6 * Exponent + Exponent * Exponent);
+
+	// Multiply the coefficients in each band with the appropriate band scaling factor.
+	Result.V0.x *= L0;
+	Result.V0.yzw *= L1;
+	Result.V1.xyzw *= L2;
+	Result.V2 *= L2;
+	return Result;
+}
+
+half DotSH3(FThreeBandSHVector A,FThreeBandSHVector B)
+{
+	half Result = dot(A.V0, B.V0);
+	Result += dot(A.V1, B.V1);
+	Result += A.V2 * B.V2;
+	return Result;
+}
+
+FThreeBandSHVector AddSH(FThreeBandSHVector A, FThreeBandSHVector B)
+{
+	FThreeBandSHVector Result = A;
+	Result.V0 += B.V0;
+	Result.V1 += B.V1;
+	Result.V2 += B.V2;
+	return Result;
+}
+// Copy From Unreal Engine SHCommon.ush:[END]
+
+// Copy From Unreal Engine MonteCarlo.ush:[BEGIN]
+// Based on: [Clarberg 2008, "Fast Equal-Area Mapping of the (Hemi)Sphere using SIMD"]
+// Fixed sign bit for UV.y == 0 and removed branch before division by using a small epsilon
+// https://fileadmin.cs.lth.se/graphics/research/papers/2008/simdmapping/clarberg_simdmapping08_preprint.pdf
+float3 EquiAreaSphericalMapping(float2 UV)
+{
+	UV = 2 * UV - 1;
+	float D = 1 - (abs(UV.x) + abs(UV.y));
+	float R = 1 - abs(D);
+	// Branch to avoid dividing by 0.
+	// Only happens with (0.5, 0.5), usually occurs in odd number resolutions which use the very central texel
+	float Phi = R == 0 ? 0 : (PI / 4) * ((abs(UV.y) - abs(UV.x)) / R + 1);
+	float F = R * sqrt(2 - R * R);
+	return float3(
+		F * sign(UV.x) * abs(cos(Phi)),
+		F * sign(UV.y) * abs(sin(Phi)),
+		sign(D) * (1 - R * R)
+	);
+}
+// Copy From Unreal Engine MonteCarlo.ush:[END]
 #endif

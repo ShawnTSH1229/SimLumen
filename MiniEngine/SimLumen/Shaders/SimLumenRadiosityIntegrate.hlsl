@@ -78,8 +78,8 @@ void LumenRadiosityIntegrateCS(uint3 thread_index : SV_DispatchThreadID)
         SCardData card_data = GetSurfaceCardData(card_info, float2(uint2(thread_index.xy % 128u)) / 128.0f, pixel_atlas_pos.xy);
         FTwoBandSHVector diffuse_transfer_sh = CalcDiffuseTransferSH(card_data.world_normal, 1.0f);
         
-        float3 texel_radiance = max(float3(0.0f, 0.0f, 0.0f), DotSH(irradiance_sh, diffuse_transfer_sh));
-        texel_radiance = texel_radiance / (weights.x + weights.y + weights.z + weights.w);
-        surface_cache_indirect_lighting[pixel_atlas_pos] = float4(texel_radiance.xyz, 0.0);
+        float3 texel_irradiance = max(float3(0.0f, 0.0f, 0.0f), DotSH(irradiance_sh, diffuse_transfer_sh));
+        texel_irradiance = texel_irradiance / (weights.x + weights.y + weights.z + weights.w);
+        surface_cache_indirect_lighting[pixel_atlas_pos] = float4(texel_irradiance.xyz, 0.0);
     }
 }

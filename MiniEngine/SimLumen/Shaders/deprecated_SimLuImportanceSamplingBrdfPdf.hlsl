@@ -57,10 +57,10 @@ void BRDFPdfCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_GroupTh
     uint2 ss_probe_idx_xy = group_idx.xy;
     float probe_depth = probe_depth.Load(ss_probe_idx_xy);//todo:check valid
 
+	uint thread_index = group_thread_idx.y * PROBE_SIZE_2D + group_thread_idx.x;
+
     if(probe_depth > 0)
     {
-        uint thread_index = group_thread_idx.y * PROBE_SIZE_2D + group_thread_idx.x;
-
 		if (thread_index == 0)
 		{
 			group_num_sh = 0;

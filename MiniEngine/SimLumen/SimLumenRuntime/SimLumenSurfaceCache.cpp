@@ -47,18 +47,18 @@ void CSimLumenSurfaceCache::Init()
 	}
 }
 
-void CSimLumenSurfaceCache::SurfaceCacheDirectLighting()
+void CSimLumenSurfaceCache::SurfaceCacheDirectLighting(ComputeContext& cptContext)
 {
-	ComputeContext& cptContext = ComputeContext::Begin(L"CSimLumenSurfaceCache");
+	//ComputeContext& cptContext = ComputeContext::Begin(L"CSimLumenSurfaceCache");
 
 	cptContext.SetRootSignature(m_surface_cache_direct_light_sig);
 	cptContext.SetPipelineState(m_surface_cache_direct_light_pso);
 
-	cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(g_ShadowBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_atlas_normal, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_atlas_depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_ShadowBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	cptContext.TransitionResource(g_surface_cache_direct, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	cptContext.FlushResourceBarriers();
 
@@ -72,19 +72,19 @@ void CSimLumenSurfaceCache::SurfaceCacheDirectLighting()
 	cptContext.SetDynamicDescriptor(3, 0, g_surface_cache_direct.GetUAV());
 
 	cptContext.Dispatch(GetGlobalResource().m_atlas_size.x / 8, GetGlobalResource().m_atlas_size.y / 8, 1);
-	cptContext.Finish();
+	//cptContext.Finish();
 }
 
-void CSimLumenSurfaceCache::SurfaceCacheCombineLighting()
+void CSimLumenSurfaceCache::SurfaceCacheCombineLighting(ComputeContext& cptContext)
 {
-	ComputeContext& cptContext = ComputeContext::Begin(L"SurfaceCacheCombineLighting");
+	//ComputeContext& cptContext = ComputeContext::Begin(L"SurfaceCacheCombineLighting");
 
 	cptContext.SetRootSignature(m_scache_combine_light_sig);
 	cptContext.SetPipelineState(m_scache_combine_light_pso);
 
-	cptContext.TransitionResource(g_surface_cache_direct, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(g_surface_cache_indirect, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_surface_cache_direct, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_surface_cache_indirect, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_atlas_albedo, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	cptContext.FlushResourceBarriers();
 
@@ -95,21 +95,21 @@ void CSimLumenSurfaceCache::SurfaceCacheCombineLighting()
 	cptContext.SetDynamicDescriptor(2, 0, g_surface_cache_final.GetUAV());
 
 	cptContext.Dispatch(GetGlobalResource().m_atlas_size.x / 8, GetGlobalResource().m_atlas_size.y / 8, 1);
-	cptContext.Finish();
+	//cptContext.Finish();
 }
 
-void CSimLumenSurfaceCache::SurfaceCacheInjectLighting()
+void CSimLumenSurfaceCache::SurfaceCacheInjectLighting(ComputeContext& cptContext)
 {
-	ComputeContext& cptContext = ComputeContext::Begin(L"SurfaceCacheInjectLighting");
+	//ComputeContext& cptContext = ComputeContext::Begin(L"SurfaceCacheInjectLighting");
 
 	cptContext.SetRootSignature(m_scache_inject_light_sig);
 	cptContext.SetPipelineState(m_scache_inject_light_pso);
 
-	cptContext.TransitionResource(GetGlobalResource().scene_voxel_visibility_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(GetGlobalResource().m_scene_sdf_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().scene_voxel_visibility_buffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_sdf_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	cptContext.FlushResourceBarriers();
 
 	cptContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
@@ -120,5 +120,5 @@ void CSimLumenSurfaceCache::SurfaceCacheInjectLighting()
 	cptContext.SetDynamicDescriptor(2, 0, GetGlobalResource().m_scene_voxel_lighting.GetUAV());
 
 	cptContext.Dispatch(SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z / 64, 6, 1);
-	cptContext.Finish();
+	//cptContext.Finish();
 }
