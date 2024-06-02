@@ -167,16 +167,16 @@ void SimLumen::RenderScene( void )
         gfxContext.Finish();
     }
     
-    {
-        ComputeContext& cptContext = ComputeContext::Begin(L"Lumen Scene Updata");
-        m_lumen_vox_scene.UpdateVisibilityBuffer(cptContext);
-        m_lumen_surface_cache.SurfaceCacheDirectLighting(cptContext);
-        m_lumen_surface_cache.SurfaceCacheCombineLighting(cptContext);
-        m_lumen_surface_cache.SurfaceCacheInjectLighting(cptContext);
-        m_radiosity_pass.RadiosityTrace(cptContext);
-        m_final_gather.Rendering(cptContext);
-        cptContext.Finish();
-    }
+   {
+       ComputeContext& cptContext = ComputeContext::Begin(L"Lumen Scene Updata");
+       m_lumen_vox_scene.UpdateVisibilityBuffer(cptContext);
+       m_lumen_surface_cache.SurfaceCacheDirectLighting(cptContext);
+       m_lumen_surface_cache.SurfaceCacheCombineLighting(cptContext);
+       m_lumen_surface_cache.SurfaceCacheInjectLighting(cptContext);
+       m_radiosity_pass.RadiosityTrace(cptContext);
+       m_final_gather.Rendering(cptContext);
+       cptContext.Finish();
+   }
 
     {
         GraphicsContext& gfxContext = GraphicsContext::Begin(L"Lighting");

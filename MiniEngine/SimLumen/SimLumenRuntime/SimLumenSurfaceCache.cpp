@@ -95,6 +95,7 @@ void CSimLumenSurfaceCache::SurfaceCacheCombineLighting(ComputeContext& cptConte
 	cptContext.SetDynamicDescriptor(2, 0, g_surface_cache_final.GetUAV());
 
 	cptContext.Dispatch(GetGlobalResource().m_atlas_size.x / 8, GetGlobalResource().m_atlas_size.y / 8, 1);
+	cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	//cptContext.Finish();
 }
 
@@ -109,7 +110,7 @@ void CSimLumenSurfaceCache::SurfaceCacheInjectLighting(ComputeContext& cptContex
 	cptContext.TransitionResource(GetGlobalResource().m_scene_sdf_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	cptContext.FlushResourceBarriers();
 
 	cptContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
@@ -120,5 +121,6 @@ void CSimLumenSurfaceCache::SurfaceCacheInjectLighting(ComputeContext& cptContex
 	cptContext.SetDynamicDescriptor(2, 0, GetGlobalResource().m_scene_voxel_lighting.GetUAV());
 
 	cptContext.Dispatch(SCENE_VOXEL_SIZE_X * SCENE_VOXEL_SIZE_Y * SCENE_VOXEL_SIZE_Z / 64, 6, 1);
+	cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	//cptContext.Finish();
 }
