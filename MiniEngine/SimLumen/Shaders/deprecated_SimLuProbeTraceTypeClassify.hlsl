@@ -1,5 +1,0 @@
-
-
-{
-    // check depth is valid
-}

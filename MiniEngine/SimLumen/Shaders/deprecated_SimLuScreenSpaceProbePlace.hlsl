@@ -1,3 +1,0 @@
-RWTexture2D<float>screen_probe_depth;
-RWTexture2D<float3>screen_probe_world_normal;
-RWTexture2D<float3>screen_probe_world_position;
