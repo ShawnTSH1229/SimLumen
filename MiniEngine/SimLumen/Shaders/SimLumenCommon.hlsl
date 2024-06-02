@@ -153,6 +153,10 @@ float2 GetCardUVFromWorldPos(SCardInfo card_info, float3 world_pos)
     return uv;
 }
 
+float Luminance(float3 color)
+{
+	return dot(color, float3(0.3,0.59,0.11));
+}
 
 
 // Copy From Unreal Engine SHCommon.ush:[BEGIN]

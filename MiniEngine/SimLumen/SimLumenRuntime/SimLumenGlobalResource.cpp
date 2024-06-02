@@ -179,6 +179,7 @@ void InitFinalGatherResource()
 
 	gSimLumenGlobalResource.m_brdf_pdf_visualize.Create(L"m_brdf_pdf_visualize", screen_width, screen_height, 1, DXGI_FORMAT_R16_FLOAT);
 	gSimLumenGlobalResource.m_brdf_pdf_sh.Create(L"m_brdf_pdf_sh", screen_probe_num_x * screen_probe_num_y, sizeof(float));
+	gSimLumenGlobalResource.g_is_lighting_pdf_buffer.Create(L"g_is_lighting_pdf_buffer", screen_width, screen_height, 1, DXGI_FORMAT_R16_FLOAT);
 }
 
 void InitGlobalResource()

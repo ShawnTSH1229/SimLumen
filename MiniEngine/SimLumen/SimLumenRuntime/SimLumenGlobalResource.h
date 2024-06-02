@@ -152,6 +152,7 @@ struct SSimLumenGlobalResource
 	//final gather resource
 	StructuredBuffer m_brdf_pdf_sh;
 	ColorBuffer m_brdf_pdf_visualize;
+	ColorBuffer g_is_lighting_pdf_buffer;
 
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal

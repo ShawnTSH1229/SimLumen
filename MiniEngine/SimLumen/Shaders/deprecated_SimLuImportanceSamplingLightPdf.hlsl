@@ -70,7 +70,7 @@ void LightPdfCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_GroupT
 					local_pdf += group_light_pdf[thread_base_index + 3 + offset];
 				}
 
-				group_light_pdf[ThreadIndex + offset + num_value_to_accumulate] = local_pdf;
+				group_light_pdf[thread_index + offset + num_value_to_accumulate] = local_pdf;
 			}
 
 			offset += num_value_to_accumulate;

@@ -46,7 +46,6 @@ namespace Graphics
     ColorBuffer g_radiosity_probe_sh_blue_atlas;
     ColorBuffer g_radiosity_probe_sh_green_atlas;
 
-
     ColorBuffer g_GBufferA;
     ColorBuffer g_GBufferB;
     //SimLumen:END

@@ -5,6 +5,7 @@ using namespace Graphics;
 void CSimLumenFinalGather::Init()
 {
 	InitBrdfPdfPso();
+    InitLightPdfPso();
 }
 
 void CSimLumenFinalGather::InitBrdfPdfPso()
@@ -43,9 +44,40 @@ void CSimLumenFinalGather::InitBrdfPdfPso()
     }
 }
 
+void CSimLumenFinalGather::InitLightPdfPso()
+{
+    // final gather lighting pdf
+    {
+        m_light_pdf_sig.Reset(2, 0);
+        m_light_pdf_sig[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
+        m_light_pdf_sig[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
+        m_light_pdf_sig.Finalize(L"m_light_pdf_sig");
+
+        std::shared_ptr<SCompiledShaderCode> p_cs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenImportanceLightingPdf.hlsl", L"LightingPdfCS", L"cs_5_1", nullptr, 0);
+        m_light_pdf_pso.SetRootSignature(m_light_pdf_sig);
+        m_light_pdf_pso.SetComputeShader(p_cs_shader_code->GetBufferPointer(), p_cs_shader_code->GetBufferSize());
+        m_light_pdf_pso.Finalize();
+    }
+}
+
 void CSimLumenFinalGather::Rendering(ComputeContext& cptContext)
 {
     BRDFPdfSH(cptContext);
+    LightingPdfSH(cptContext);
+}
+
+void CSimLumenFinalGather::LightingPdfSH(ComputeContext& cptContext)
+{
+    cptContext.SetRootSignature(m_light_pdf_sig);
+    cptContext.SetPipelineState(m_light_pdf_pso);
+
+    cptContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    cptContext.TransitionResource(GetGlobalResource().g_is_lighting_pdf_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    cptContext.FlushResourceBarriers();
+
+    cptContext.SetDynamicDescriptor(0, 0, g_GBufferB.GetSRV());
+    cptContext.SetDynamicDescriptor(1, 0, GetGlobalResource().g_is_lighting_pdf_buffer.GetUAV());
+    cptContext.Dispatch(GetGlobalResource().m_lumen_scene_info.screen_probe_size_x, GetGlobalResource().m_lumen_scene_info.screen_probe_size_y, 1);
 }
 
 void CSimLumenFinalGather::BRDFPdfSH(ComputeContext& cptContext)

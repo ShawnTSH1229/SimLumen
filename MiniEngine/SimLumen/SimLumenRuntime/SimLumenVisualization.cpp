@@ -229,6 +229,10 @@ void CSimLumenVisualization::VisualizeVoxelLighting(GraphicsContext& gfxContext)
 	gfxContext.DrawIndexedInstanced(m_vox_vis_index_count_perins, m_instance_num, 0, 0, 0);
 }
 
+void CSimLumenVisualization::VisualizeFinalGather(GraphicsContext& gfxContext)
+{
+}
+
 void CSimLumenVisualization::InitSurfaceCachePSO()
 {
 	D3D12_INPUT_ELEMENT_DESC pos_uv[] =
@@ -375,6 +379,10 @@ void CSimLumenVisualization::InitVisVoxelLightingPSO()
 		m_vis_voxlight_pso.SetPixelShader(p_ps_shader_code->GetBufferPointer(), p_ps_shader_code->GetBufferSize());
 		m_vis_voxlight_pso.Finalize();
 	}
+}
+
+void CSimLumenVisualization::InitVisFinalGatherPSO()
+{
 }
 
 void CSimLumenVisualization::InitSDFVisBuffer()
