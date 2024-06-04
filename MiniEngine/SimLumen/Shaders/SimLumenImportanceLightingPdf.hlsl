@@ -9,7 +9,13 @@
 groupshared float group_light_pdf[PROBE_SIZE_2D * PROBE_SIZE_2D * 4];
 
 Texture2D<float> gbuffer_depth      : register(t0);
+Texture2D<float3> history_radiance      : register(t1);
+#if PROBE_RADIANCE_HISTORY
+RWTexture2D<float3> sspace_composited_radiance : register(t2);
+#endif
 RWTexture2D<float> out_light_pdf         : register(u0);
+
+
 
 [numthreads(PROBE_SIZE_2D, PROBE_SIZE_2D, 1)]
 void LightingPdfCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_GroupThreadID, uint3 dispatch_thread_idx: SV_DispatchThreadID)
@@ -30,6 +36,15 @@ void LightingPdfCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_Gro
         if(transparency > 0.0f)
         {
 #if PROBE_RADIANCE_HISTORY
+            const float2 global_thread_size = float2(is_pdf_thread_size_x,is_pdf_thread_size_x);
+            float2 piexl_tex_uv = float2(dispatch_thread_idx.xy) / global_thread_size;
+            float3 probe_world_position = GetWorldPosByDepth(probe_depth, piexl_tex_uv);
+            float4 pre_view_pos = mul(PreViewProjMatrix,float4(worldPos, 1.0));
+            float2 pre_view_screen_pos = (pre_view_pos.xy / pre_view_pos.w) * global_thread_size;
+            uint2 pre_probe_pos = uint2(pre_view_screen_pos) / uint2(PROBE_SIZE_2D,PROBE_SIZE_2D);
+            uint2 pre_texel_pos = pre_probe_pos + group_thread_idx.xy;
+
+            lighting = sspace_composited_radiance.Load(int3(pre_texel_pos.xy,0));
 #else
             lighting = 1;
 #endif

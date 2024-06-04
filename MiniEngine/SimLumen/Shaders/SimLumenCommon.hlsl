@@ -34,6 +34,7 @@
     float4x4 InverseViewProjMatrix;\
     float3 point_light_world_pos;\
     float point_light_radius;\
+	float4x4 PreViewProjMatrix;\
     
 #define GLOBAL_LUMEN_SCENE_INFO\
     float3 scene_voxel_min_pos;\
@@ -191,6 +192,12 @@ struct FThreeBandSHVector
 	half V2;
 };
 
+struct FThreeBandSHVectorRGB
+{
+	FThreeBandSHVector R;
+	FThreeBandSHVector G;
+	FThreeBandSHVector B;
+};
 
 FTwoBandSHVectorRGB MulSH(FTwoBandSHVectorRGB A, half Scalar)
 {
@@ -284,6 +291,7 @@ FThreeBandSHVector SHBasisFunction3(half3 InputVector)
 	return Result;
 }
 
+
 FThreeBandSHVector CalcDiffuseTransferSH3(half3 Normal,half Exponent)
 {
 	FThreeBandSHVector Result = SHBasisFunction3(Normal);
@@ -311,6 +319,15 @@ half DotSH3(FThreeBandSHVector A,FThreeBandSHVector B)
 	return Result;
 }
 
+half3 DotSH3(FThreeBandSHVectorRGB A,FThreeBandSHVector B)
+{
+	half3 Result = 0;
+	Result.r = DotSH3(A.R,B);
+	Result.g = DotSH3(A.G,B);
+	Result.b = DotSH3(A.B,B);
+	return Result;
+}
+
 FThreeBandSHVector AddSH(FThreeBandSHVector A, FThreeBandSHVector B)
 {
 	FThreeBandSHVector Result = A;
@@ -319,6 +336,40 @@ FThreeBandSHVector AddSH(FThreeBandSHVector A, FThreeBandSHVector B)
 	Result.V2 += B.V2;
 	return Result;
 }
+
+FThreeBandSHVectorRGB MulSH3(FThreeBandSHVector A, half3 Color)
+{
+	FThreeBandSHVectorRGB Result;
+	Result.R.V0 = A.V0 * Color.r;
+	Result.R.V1 = A.V1 * Color.r;
+	Result.R.V2 = A.V2 * Color.r;
+	Result.G.V0 = A.V0 * Color.g;
+	Result.G.V1 = A.V1 * Color.g;
+	Result.G.V2 = A.V2 * Color.g;
+	Result.B.V0 = A.V0 * Color.b;
+	Result.B.V1 = A.V1 * Color.b;
+	Result.B.V2 = A.V2 * Color.b;
+	return Result;
+}
+
+FThreeBandSHVectorRGB AddSH(FThreeBandSHVectorRGB A, FThreeBandSHVectorRGB B)
+{
+	FThreeBandSHVectorRGB Result;
+	Result.R = AddSH(A.R, B.R);
+	Result.G = AddSH(A.G, B.G);
+	Result.B = AddSH(A.B, B.B);
+	return Result;
+}
+
+FThreeBandSHVector MulSH3(FThreeBandSHVector A, half Scalar)
+{
+	FThreeBandSHVector Result;
+	Result.V0 = A.V0 * Scalar;
+	Result.V1 = A.V1 * Scalar;
+	Result.V2 = A.V2 * Scalar;
+	return Result;
+}
+
 // Copy From Unreal Engine SHCommon.ush:[END]
 
 // Copy From Unreal Engine MonteCarlo.ush:[BEGIN]
@@ -354,6 +405,70 @@ void UnpackRayInfo(uint RayInfo, out uint2 TexelCoord, out uint Level)
 	TexelCoord.x = RayInfo & 0x3F;
 	TexelCoord.y = (RayInfo >> 6) & 0x3F;
 	Level = (RayInfo >> 12) & 0xF;
+}
+
+// Wrap around octahedral map for correct hardware bilinear filtering
+uint2 OctahedralMapWrapBorder(uint2 TexelCoord, uint Resolution, uint BorderSize)
+{
+	if (TexelCoord.x < BorderSize)
+	{
+		TexelCoord.x = BorderSize - 1 + BorderSize - TexelCoord.x;
+		TexelCoord.y = Resolution - 1 - TexelCoord.y;
+	}
+	if (TexelCoord.x >= Resolution - BorderSize)
+	{
+		TexelCoord.x = (Resolution - BorderSize) - (TexelCoord.x - (Resolution - BorderSize - 1));
+		TexelCoord.y = Resolution - 1 - TexelCoord.y;
+	}
+	if (TexelCoord.y < BorderSize)
+	{
+		TexelCoord.y = BorderSize - 1 + BorderSize - TexelCoord.y;
+		TexelCoord.x = Resolution - 1 - TexelCoord.x;
+	}
+	if (TexelCoord.y >= Resolution - BorderSize)
+	{
+		TexelCoord.y = (Resolution - BorderSize) - (TexelCoord.y - (Resolution - BorderSize - 1));
+		TexelCoord.x = Resolution - 1 - TexelCoord.x;
+	}
+
+	return TexelCoord - BorderSize;
+}
+
+// Based on: [Clarberg 2008, "Fast Equal-Area Mapping of the (Hemi)Sphere using SIMD"]
+// Removed branch before division by using a small epsilon
+// https://fileadmin.cs.lth.se/graphics/research/papers/2008/simdmapping/clarberg_simdmapping08_preprint.pdf
+float2 InverseEquiAreaSphericalMapping(float3 Direction)
+{
+	// Most use cases of this func generate Direction by diffing two positions and thus unnormalized
+	Direction = normalize(Direction);
+	
+	float3 AbsDir = abs(Direction);
+	float R = sqrt(1 - AbsDir.z);
+	float Epsilon = 5.42101086243e-20; // 2^-64 (this avoids 0/0 without changing the rest of the mapping)
+	float x = min(AbsDir.x, AbsDir.y) / (max(AbsDir.x, AbsDir.y) + Epsilon);
+
+	// Coefficients for 6th degree minimax approximation of atan(x)*2/pi, x=[0,1].
+	const float t1 = 0.406758566246788489601959989e-5f;
+	const float t2 = 0.636226545274016134946890922156f;
+	const float t3 = 0.61572017898280213493197203466e-2f;
+	const float t4 = -0.247333733281268944196501420480f;
+	const float t5 = 0.881770664775316294736387951347e-1f;
+	const float t6 = 0.419038818029165735901852432784e-1f;
+	const float t7 = -0.251390972343483509333252996350e-1f;
+
+	// Polynomial approximation of atan(x)*2/pi
+	float Phi = t6 + t7 * x;
+	Phi = t5 + Phi * x;
+	Phi = t4 + Phi * x;
+	Phi = t3 + Phi * x;
+	Phi = t2 + Phi * x;
+	Phi = t1 + Phi * x;
+
+	Phi = (AbsDir.x < AbsDir.y) ? 1 - Phi : Phi;
+	float2 UV = float2(R - Phi * R, Phi * R);
+	UV = (Direction.z < 0) ? 1 - UV.yx : UV;
+	UV = asfloat(asuint(UV) ^ (asuint(Direction.xy) & 0x80000000u));
+	return UV * 0.5 + 0.5;
 }
 // Copy From Unreal Engine:[END]
 #endif
