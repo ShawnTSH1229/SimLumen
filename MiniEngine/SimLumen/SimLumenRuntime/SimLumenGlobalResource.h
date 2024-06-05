@@ -155,6 +155,13 @@ struct SSimLumenGlobalResource
 	ColorBuffer g_is_lighting_pdf_buffer;
 	ColorBuffer m_struct_is_tex;
 
+	ColorBuffer m_ssprobe_type;
+	ColorBuffer m_sspace_trace_radiance;
+	ColorBuffer m_sspace_radiance;
+	ColorBuffer m_sspace_radiance_filtered;
+	ColorBuffer m_sspace_radiance_oct;
+	ColorBuffer m_sspace_final_radiance;
+
 	// 1: visualize mesh sdf normal
 	// 2: visualize global sdf normal
 	// 3: visualize surface cache albedo

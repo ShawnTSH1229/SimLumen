@@ -35,6 +35,7 @@ __declspec(align(256)) struct SLumenViewGlobalConstant
 	Math::Matrix4 InverseViewProjMatrix;
 	DirectX::XMFLOAT3 PointLightWorldPos;
 	float PointLightRadius;
+	Math::Matrix4 PreViewProjMatrix;
 };
 
 __declspec(align(256)) struct SLumenMeshConstant

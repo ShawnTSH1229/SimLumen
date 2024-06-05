@@ -18,16 +18,20 @@ cbuffer CMeshSdfBrickTextureInfo : register(b2)
 
 Texture2D<float> gbuffer_depth      : register(t0);
 Texture2D<uint> structed_is_indirect_table: register(t1);
-StructuredBuffer<SVoxelLighting> scene_voxel_lighting: register(t5);
+StructuredBuffer<SVoxelLighting> scene_voxel_lighting: register(t2);
+Texture3D<float> global_sdf_texture: register(t3);
 
 RWTexture2D<uint> screen_space_probe_type : register(u0);
 RWTexture2D<float3> screen_space_radiance : register(u1);
+
+SamplerState g_global_sdf_sampler : register(s0);
+
 #include "SimLumenGlobalSDFTraceCommon.hlsl"
 #include "SimLumenScreenSpaceProbeTraceCommon.hlsl"
 #include "SimLumenRadiosityCommon.hlsl"
 
 [numthreads(PROBE_SIZE_2D,PROBE_SIZE_2D,1)]
-void ScreenProbeTraceMeshSDFsCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_GroupThreadID, uint3 dispatch_thread_idx: SV_DispatchThreadID)
+void ScreenProbeTraceVoxelCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_GroupThreadID, uint3 dispatch_thread_idx: SV_DispatchThreadID)
 {
     uint2 ss_probe_idx_xy = group_idx.xy;
     uint2 ss_probe_atlas_pos = ss_probe_idx_xy * PROBE_SIZE_2D + PROBE_SIZE_2D / 2;
@@ -87,9 +91,13 @@ void ScreenProbeTraceMeshSDFsCS(uint3 group_idx : SV_GroupID, uint3 group_thread
                 radiance += voxel_lighting_z * weight_z;
 
                 radiance /= (weight_x + weight_y + weight_z);
-
-                screen_space_radiance[dispatch_thread_idx.xy] = radiance;
             }
+            else
+            {
+                radiance = float3(0.1,0.1,0.1); //hack sky light
+            }
+
+            screen_space_radiance[dispatch_thread_idx.xy] = radiance;
             screen_space_probe_type[dispatch_thread_idx.xy] = 2;
        }
     }

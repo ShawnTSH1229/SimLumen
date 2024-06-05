@@ -16,16 +16,17 @@ cbuffer CMeshSdfBrickTextureInfo : register(b2)
     GLOBAL_SDF_BUFFER_MEMBER
 };
 
-Texture2D<float> gbuffer_depth      : register(t0);
-Texture2D<uint> structed_is_indirect_table: register(t1);
-StructuredBuffer<SMeshSDFInfo> scene_sdf_infos : register(t1);
-Texture3D<float> distance_field_brick_tex: register(t2);
-StructuredBuffer<SCardInfo> scene_card_infos : register(t0);
-SamplerState g_sampler_point_3d : register(s0);
-Texture2D<float4>  surface_cache_final_lighting          : register(t1);
+Texture2D<float> gbuffer_depth                          : register(t0);
+Texture2D<uint> structed_is_indirect_table              : register(t1);
+StructuredBuffer<SMeshSDFInfo> scene_sdf_infos          : register(t2);
+Texture3D<float> distance_field_brick_tex               : register(t3);
+StructuredBuffer<SCardInfo> scene_card_infos            : register(t4);
+Texture2D<float4>  surface_cache_final_lighting         : register(t5);
 
 RWTexture2D<uint> screen_space_probe_type : register(u0);
 RWTexture2D<float3> screen_space_radiance : register(u1);
+
+SamplerState g_sampler_point_3d : register(s0);
 
 #include "SimLumenScreenSpaceProbeTraceCommon.hlsl"
 #include "SimLumenSDFTraceCommon.hlsl"
@@ -99,7 +100,7 @@ void ScreenProbeTraceMeshSDFsCS(uint3 group_idx : SV_GroupID, uint3 group_thread
             }
             else
             {
-                trace_radiance = float3(0.1,0.1,0.1);
+                trace_radiance = float3(0.1,0.1,0.1); //hack sky light
             }
             screen_space_probe_type[dispatch_thread_idx.xy] = 1;
        }

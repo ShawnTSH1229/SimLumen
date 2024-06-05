@@ -57,6 +57,8 @@ private:
     CSimLumenSurfaceCache m_lumen_surface_cache;
     CSimLumenRadiosity m_radiosity_pass;
     CSimLumenFinalGather m_final_gather;
+
+    Math::Matrix4 pre_view_matrix;
 };
 
 CREATE_APPLICATION( SimLumen )
@@ -197,9 +199,12 @@ void SimLumen::UpdateConstantBuffer(GraphicsContext& cbUpdateContext)
     globals.InverseViewProjMatrix = Math::Invert(globals.ViewProjMatrix);
     globals.PointLightWorldPos = DirectX::XMFLOAT3(-20, 32, -50);
     globals.PointLightRadius = 20.0f;
+    globals.PreViewProjMatrix = pre_view_matrix;
     DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
     memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
     GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
+    pre_view_matrix = globals.ViewProjMatrix;
+
     SMeshSdfBrickTextureInfo global_sdf_info;
     global_sdf_info.texture_brick_num_x = SDF_BRICK_NUM_XY;
     global_sdf_info.texture_brick_num_y = SDF_BRICK_NUM_XY;

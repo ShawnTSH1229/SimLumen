@@ -5,13 +5,13 @@ cbuffer CBLumenSceneInfo : register(b0)
     GLOBAL_LUMEN_SCENE_INFO
 };
 
-Texture2D<float3> screen_space_oct_irradiance : register(t0);
-Texture2D<float> gbuffer_depth      : register(t0);
-Texture2D<float4> gbuffer_A      : register(t0);
-Texture2D<float4> gbuffer_B      : register(t0);
-SamplerState sampler_linear_clamp : register(s0);
+Texture2D<float3> screen_space_oct_irradiance       : register(t0);
+Texture2D<float> gbuffer_depth                      : register(t1);
+Texture2D<float4> gbuffer_B                         : register(t2);
 
-RWTexture2D<float3> final_radiance      : register(u0);
+RWTexture2D<float3> final_radiance                  : register(u0);
+
+SamplerState sampler_linear_clamp                   : register(s0);
 
 float3 GetScreenProbeIrradiance(uint2 probe_start_pos, float2 irradiance_probe_uv)
 {
@@ -21,7 +21,7 @@ float3 GetScreenProbeIrradiance(uint2 probe_start_pos, float2 irradiance_probe_u
 }
 
 [numthreads(PROBE_SIZE_2D,PROBE_SIZE_2D,1)]
-void ScreenProbeFilterCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_GroupThreadID, uint3 dispatch_thread_idx: SV_DispatchThreadID)
+void ScreenProbeIntegrateCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_GroupThreadID, uint3 dispatch_thread_idx: SV_DispatchThreadID)
 {
     float depth = gbuffer_depth.Load(int3(dispatch_thread_idx.xy,0));
     float3 total_radiance = float3(0,0,0);

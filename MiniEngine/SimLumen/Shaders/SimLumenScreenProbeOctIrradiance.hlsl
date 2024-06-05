@@ -6,7 +6,7 @@ RWTexture2D<float3> screen_space_oct_irradiance : register(u0);
 
 #define CONVERT_SH_GROUP_SIZE 8
 [numthreads(CONVERT_SH_GROUP_SIZE, CONVERT_SH_GROUP_SIZE, 1)]
-void LumenScreenProbeConvertToSH(uint3 thread_index : SV_DispatchThreadID)
+void LumenScreenProbeConvertToOCT(uint3 thread_index : SV_DispatchThreadID)
 {
     uint2 probe_idx = thread_index.xy;
     uint2 probe_start_pos = probe_idx * SCREEN_SPACE_PROBE;

@@ -181,6 +181,12 @@ void InitFinalGatherResource()
 	gSimLumenGlobalResource.m_brdf_pdf_sh.Create(L"m_brdf_pdf_sh", screen_probe_num_x * screen_probe_num_y, sizeof(float));
 	gSimLumenGlobalResource.g_is_lighting_pdf_buffer.Create(L"g_is_lighting_pdf_buffer", screen_width, screen_height, 1, DXGI_FORMAT_R16_FLOAT);
 	gSimLumenGlobalResource.m_struct_is_tex.Create(L"m_struct_is_tex", screen_width, screen_height, 1, DXGI_FORMAT_R32_UINT);
+	gSimLumenGlobalResource.m_ssprobe_type.Create(L"m_ssprobe_type", screen_width, screen_height, 1, DXGI_FORMAT_R8_UINT);
+	gSimLumenGlobalResource.m_sspace_trace_radiance.Create(L"m_sspace_trace_radiance", screen_width, screen_height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+	gSimLumenGlobalResource.m_sspace_radiance.Create(L"m_sspace_radiance", screen_width, screen_height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+	gSimLumenGlobalResource.m_sspace_radiance_filtered.Create(L"m_sspace_radiance_filtered", screen_width, screen_height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+	gSimLumenGlobalResource.m_sspace_radiance_oct.Create(L"m_sspace_radiance_oct", screen_width, screen_height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+	gSimLumenGlobalResource.m_sspace_final_radiance.Create(L"m_sspace_final_radiance", screen_width, screen_height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
 }
 
 void InitGlobalResource()

@@ -3,9 +3,9 @@
 
 Texture2D<float> gbuffer_depth      : register(t0);
 Texture2D<uint> structed_is_indirect_table: register(t1);
-Texture2D<float3> screen_space_trace_radiance : register(u1);
+Texture2D<float3> screen_space_trace_radiance : register(t2);
 
-RWTexture2D<float3> screen_space_radiance;
+RWTexture2D<float3> screen_space_radiance: register(u0);
 
 groupshared uint shared_accumulator[PROBE_SIZE_2D * PROBE_SIZE_2D][3];
 

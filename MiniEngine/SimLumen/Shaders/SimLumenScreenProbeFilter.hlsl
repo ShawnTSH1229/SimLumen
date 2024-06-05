@@ -6,7 +6,6 @@ cbuffer CLumenSceneInfo : register(b0)
     GLOBAL_LUMEN_SCENE_INFO
 };
 
-
 Texture2D<float> gbuffer_depth      : register(t0);
 Texture2D<float3> screen_space_radiance : register(t1);
 
