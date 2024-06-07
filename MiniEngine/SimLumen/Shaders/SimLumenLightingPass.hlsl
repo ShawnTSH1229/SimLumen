@@ -14,10 +14,11 @@ void vs_main(
     Pos = float4(lerp(float2(-1, 1), float2(1, -1), Tex), 0, 1);
 };
 
-Texture2D<float4> GBufferA          : register(t0);
-Texture2D<float4> GBufferB          : register(t1);
-Texture2D<float> DepthBuffer        : register(t2);
-Texture2D<float> ShadowDepthBuffer        : register(t3);
+Texture2D<float4> GBufferA              : register(t0);
+Texture2D<float4> GBufferB              : register(t1);
+Texture2D<float> DepthBuffer            : register(t2);
+Texture2D<float> ShadowDepthBuffer      : register(t3);
+Texture2D<float3> ScreenRadiance        : register(t4);
 
 struct SurfaceProperties
 {
@@ -161,8 +162,15 @@ float4 ps_main(in float2 Tex : TexCoord0, in float4 screen_pos : SV_Position) : 
             colorAccum += ShadeDirectionalLight(Surface, normalize(point_light_direction), float3(1,1,1)) * attenuation * attenuation;
         }
 
-        colorAccum += (Surface.c_diff * 0.03);
+        // indirect lighing
+        {
+            float3 screen_radiance = ScreenRadiance.Load(int3(pix_pos.xy,0)).xyz;
+            colorAccum += (Surface.c_diff * screen_radiance);
+        }
+        
+        
     }
 
+    
     return float4(colorAccum, 1.0);
 }

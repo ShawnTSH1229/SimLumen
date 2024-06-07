@@ -18,6 +18,7 @@ cbuffer CLumenViewInfo : register(b1)
 
 Texture2D<float4> gbuffer_b         : register(t0);
 Texture2D<float> gbuffer_depth      : register(t1);
+Texture2D<float4> gbuffer_c         : register(t2);
 
 RWStructuredBuffer<float> brdf_pdf_sh : register(u0);
 #if ENABLE_VIS_BRDF_PDF
@@ -95,8 +96,12 @@ void BRDFPdfCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx : SV_GroupTh
             float3 thread_world_normal = gbuffer_b.Load(int3(dispatch_thread_idx.xy, 0)).xyz * 2.0 - 1.0;
             float2 piexl_tex_uv = float2(dispatch_thread_idx.xy) / global_thread_size;
 
-            float3 pixel_world_position = GetWorldPosByDepth(thread_depth, piexl_tex_uv);
-            float3 probe_world_position = GetWorldPosByDepth(probe_depth, ss_probe_atlas_pos / global_thread_size);
+            //todo: fixme
+            //float3 pixel_world_position = GetWorldPosByDepth(thread_depth, piexl_tex_uv);
+            //float3 probe_world_position = GetWorldPosByDepth(probe_depth, ss_probe_atlas_pos / global_thread_size);
+
+            float3 pixel_world_position = gbuffer_c.Load(int3(dispatch_thread_idx.xy,0)).xyz;
+            float3 probe_world_position = gbuffer_c.Load(int3(ss_probe_atlas_pos.xy,0)).xyz;
 
             float4 pixel_world_plane = float4(thread_world_normal, dot(thread_world_normal,pixel_world_position));
             float plane_distance = abs(dot(float4(probe_world_position, -1), pixel_world_plane));

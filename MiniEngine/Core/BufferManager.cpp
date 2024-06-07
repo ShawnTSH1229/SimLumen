@@ -48,6 +48,7 @@ namespace Graphics
 
     ColorBuffer g_GBufferA;
     ColorBuffer g_GBufferB;
+    ColorBuffer g_GBufferC;//todo: fix me!
     //SimLumen:END
 
     ColorBuffer g_SSAOFullScreen(Color(1.0f, 1.0f, 1.0f));
@@ -154,6 +155,7 @@ void Graphics::InitializeRenderingBuffers( uint32_t bufferWidth, uint32_t buffer
 
         g_GBufferA.Create(L"g_GBufferA", bufferWidth, bufferHeight, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);
         g_GBufferB.Create(L"g_GBufferB", bufferWidth, bufferHeight, 1, DXGI_FORMAT_R8G8B8A8_UNORM, esram);
+        g_GBufferC.Create(L"g_GBufferC", bufferWidth, bufferHeight, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, esram);
 
         esram.PushStack();	// Render HDR image
 

@@ -49,6 +49,7 @@ namespace Graphics
 
     extern ColorBuffer g_GBufferA;
     extern ColorBuffer g_GBufferB;
+    extern ColorBuffer g_GBufferC;
     //SimLumen:END
 
     extern ColorBuffer g_SSAOFullScreen;	// R8_UNORM

@@ -22,6 +22,7 @@ private:
 	void InitVisVoxelLightBuffer();
 	void InitSurfaceCacheVisBuffer();
 
+
 	ByteAddressBuffer m_sdf_vis_pos_buffer;
 	ByteAddressBuffer m_sdf_vis_direction_buffer;
 	ByteAddressBuffer m_sdf_vis_index_buffer;

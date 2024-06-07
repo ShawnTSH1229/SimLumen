@@ -20,7 +20,7 @@ void CSimLumenGBufferGeneration::Init()
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       2, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
 
-    DXGI_FORMAT gbuffer_formats[2] = { g_GBufferA.GetFormat(),g_GBufferB.GetFormat() };;
+    DXGI_FORMAT gbuffer_formats[3] = { g_GBufferA.GetFormat(),g_GBufferB.GetFormat(),g_GBufferC.GetFormat ()};;
     DXGI_FORMAT DepthFormat = g_SceneDepthBuffer.GetFormat();
 
     // PSO
@@ -35,7 +35,7 @@ void CSimLumenGBufferGeneration::Init()
         m_gbuffer_gen_pso.SetDepthStencilState(DepthStateReadWrite);
         m_gbuffer_gen_pso.SetInputLayout(_countof(pos_norm_uv), pos_norm_uv);
         m_gbuffer_gen_pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-        m_gbuffer_gen_pso.SetRenderTargetFormats(2, gbuffer_formats, DepthFormat);
+        m_gbuffer_gen_pso.SetRenderTargetFormats(3, gbuffer_formats, DepthFormat);
         m_gbuffer_gen_pso.SetVertexShader(p_vs_shader_code->GetBufferPointer(), p_vs_shader_code->GetBufferSize());
         m_gbuffer_gen_pso.SetPixelShader(p_ps_shader_code->GetBufferPointer(), p_ps_shader_code->GetBufferSize());
         m_gbuffer_gen_pso.Finalize();
@@ -47,14 +47,16 @@ void CSimLumenGBufferGeneration::Rendering(GraphicsContext& gfxContext)
     //GraphicsContext& gfxContext = GraphicsContext::Begin(L"CSimLumenGBufferGeneration");
     gfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
     gfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
+    gfxContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET, false);
     gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, false);
     gfxContext.ClearColor(g_GBufferA);
     gfxContext.ClearColor(g_GBufferB);
+    gfxContext.ClearColor(g_GBufferC);
     gfxContext.ClearDepth(g_SceneDepthBuffer);
 
-    D3D12_CPU_DESCRIPTOR_HANDLE g_buffers[2] = { g_GBufferA .GetRTV(),g_GBufferB.GetRTV()};
+    D3D12_CPU_DESCRIPTOR_HANDLE g_buffers[3] = { g_GBufferA.GetRTV(),g_GBufferB.GetRTV(),g_GBufferC.GetRTV() };
 
-    gfxContext.SetRenderTargets(2, g_buffers, g_SceneDepthBuffer.GetDSV());
+    gfxContext.SetRenderTargets(3, g_buffers, g_SceneDepthBuffer.GetDSV());
     gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
 
     gfxContext.SetRootSignature(m_gbuffer_gen_sig);
@@ -84,6 +86,7 @@ void CSimLumenGBufferGeneration::Rendering(GraphicsContext& gfxContext)
     gfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     gfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    gfxContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     gfxContext.FlushResourceBarriers();
     //gfxContext.Finish();
 }

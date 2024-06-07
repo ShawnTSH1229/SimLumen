@@ -35,6 +35,7 @@
     float3 point_light_world_pos;\
     float point_light_radius;\
 	float4x4 PreViewProjMatrix;\
+	uint visualize_type;\
     
 #define GLOBAL_LUMEN_SCENE_INFO\
     float3 scene_voxel_min_pos;\

@@ -26,6 +26,7 @@ private:
 
 	// importance sampling
 	void LightingPdfSH(ComputeContext& cptContext);
+	void LightingHistPdfSH(ComputeContext& cptContext);
 	void BRDFPdfSH(ComputeContext& cptContext);
 	void BuildStructuredIS(ComputeContext& cptContext);
 

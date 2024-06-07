@@ -23,7 +23,7 @@ void CSimLumenFinalGather::InitBrdfPdfPso()
         m_brdf_pdf_sig.Reset(4, 0);
         m_brdf_pdf_sig[0].InitAsConstantBuffer(0);
         m_brdf_pdf_sig[1].InitAsConstantBuffer(1);
-        m_brdf_pdf_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2);
+        m_brdf_pdf_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3);
         m_brdf_pdf_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
         m_brdf_pdf_sig.Finalize(L"m_brdf_pdf_sig");
 
@@ -38,7 +38,7 @@ void CSimLumenFinalGather::InitBrdfPdfPso()
         m_brdf_pdf_vis_sig.Reset(4, 0);
         m_brdf_pdf_vis_sig[0].InitAsConstantBuffer(0);
         m_brdf_pdf_vis_sig[1].InitAsConstantBuffer(1);
-        m_brdf_pdf_vis_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2);
+        m_brdf_pdf_vis_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3);
         m_brdf_pdf_vis_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 2);
         m_brdf_pdf_vis_sig.Finalize(L"m_brdf_pdf_vis_sig");
 
@@ -66,6 +66,23 @@ void CSimLumenFinalGather::InitLightPdfPso()
         m_light_pdf_pso.SetComputeShader(p_cs_shader_code->GetBufferPointer(), p_cs_shader_code->GetBufferSize());
         m_light_pdf_pso.Finalize();
     }
+
+    // final gather lighting pdf
+    {
+        m_light_hist_pdf_sig.Reset(4, 0);
+        m_light_hist_pdf_sig[0].InitAsConstantBuffer(0);
+        m_light_hist_pdf_sig[1].InitAsConstantBuffer(1);
+        m_light_hist_pdf_sig[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3);
+        m_light_hist_pdf_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
+        m_light_hist_pdf_sig.Finalize(L"m_light_hist_pdf_sig");
+
+        D3D_SHADER_MACRO fxc_define[1] = { D3D_SHADER_MACRO{"PROBE_RADIANCE_HISTORY","1"} };
+
+        std::shared_ptr<SCompiledShaderCode> p_cs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenImportanceLightingPdf.hlsl", L"LightingPdfCS", L"cs_5_1", fxc_define, 1);
+        m_light_hist_pdf_pso.SetRootSignature(m_light_hist_pdf_sig);
+        m_light_hist_pdf_pso.SetComputeShader(p_cs_shader_code->GetBufferPointer(), p_cs_shader_code->GetBufferSize());
+        m_light_hist_pdf_pso.Finalize();
+    }
 }
 
 void CSimLumenFinalGather::InitStructuredISPso()
@@ -88,7 +105,7 @@ void CSimLumenFinalGather::InitSSProbeTraceMeshSDFPso()
     m_ssprobe_trace_mesh_sdf_sig[0].InitAsConstantBuffer(0);
     m_ssprobe_trace_mesh_sdf_sig[1].InitAsConstantBuffer(1);
     m_ssprobe_trace_mesh_sdf_sig[2].InitAsConstantBuffer(2);
-    m_ssprobe_trace_mesh_sdf_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 7);
+    m_ssprobe_trace_mesh_sdf_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 8);
     m_ssprobe_trace_mesh_sdf_sig[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 2);
     m_ssprobe_trace_mesh_sdf_sig[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, 1);
     m_ssprobe_trace_mesh_sdf_sig.Finalize(L"m_ssprobe_trace_mesh_sdf_sig");
@@ -105,7 +122,7 @@ void CSimLumenFinalGather::InitSSProbeTraceVoxelPso()
     m_ssprobe_voxel_sig[0].InitAsConstantBuffer(0);
     m_ssprobe_voxel_sig[1].InitAsConstantBuffer(1);
     m_ssprobe_voxel_sig[2].InitAsConstantBuffer(2);
-    m_ssprobe_voxel_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 5);
+    m_ssprobe_voxel_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 6);
     m_ssprobe_voxel_sig[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 2);
     m_ssprobe_voxel_sig[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, 1);
     m_ssprobe_voxel_sig.Finalize(L"m_ssprobe_voxel_sig");
@@ -173,9 +190,18 @@ void CSimLumenFinalGather::InitSSProbeIntegratePso()
 
 void CSimLumenFinalGather::Rendering(ComputeContext& cptContext)
 {
+    static bool is_first_frame = true;
     // importance sampling
     BRDFPdfSH(cptContext);
-    LightingPdfSH(cptContext);
+    if (is_first_frame || (GetGlobalResource().m_visualize_type == 15))
+    {
+        LightingPdfSH(cptContext);
+    }
+    else
+    {
+        LightingHistPdfSH(cptContext);
+    }
+    is_first_frame = false;
     BuildStructuredIS(cptContext);
 
     // filter and gather
@@ -192,13 +218,35 @@ void CSimLumenFinalGather::LightingPdfSH(ComputeContext& cptContext)
     cptContext.SetRootSignature(m_light_pdf_sig);
     cptContext.SetPipelineState(m_light_pdf_pso);
 
+
     cptContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(GetGlobalResource().g_is_lighting_pdf_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.FlushResourceBarriers();
 
-    cptContext.SetDynamicDescriptor(0, 0, g_GBufferB.GetSRV());
+    cptContext.SetDynamicDescriptor(0, 0, g_SceneDepthBuffer.GetDepthSRV());
     cptContext.SetDynamicDescriptor(1, 0, GetGlobalResource().g_is_lighting_pdf_buffer.GetUAV());
     cptContext.Dispatch(GetGlobalResource().m_lumen_scene_info.screen_probe_size_x, GetGlobalResource().m_lumen_scene_info.screen_probe_size_y, 1);
+}
+
+void CSimLumenFinalGather::LightingHistPdfSH(ComputeContext& cptContext)
+{
+    cptContext.SetRootSignature(m_light_hist_pdf_sig);
+    cptContext.SetPipelineState(m_light_hist_pdf_pso);
+
+    cptContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    cptContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    cptContext.TransitionResource(GetGlobalResource().m_sspace_radiance, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    cptContext.TransitionResource(GetGlobalResource().g_is_lighting_pdf_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    cptContext.FlushResourceBarriers();
+
+    cptContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
+    cptContext.SetConstantBuffer(1, GetGlobalResource().m_global_view_constant_buffer);
+    cptContext.SetDynamicDescriptor(2, 0, g_SceneDepthBuffer.GetDepthSRV());
+    cptContext.SetDynamicDescriptor(2, 1, g_GBufferC.GetSRV());
+    cptContext.SetDynamicDescriptor(2, 2, GetGlobalResource().m_sspace_radiance.GetSRV());
+    cptContext.SetDynamicDescriptor(3, 0, GetGlobalResource().g_is_lighting_pdf_buffer.GetUAV());
+    cptContext.Dispatch(GetGlobalResource().m_lumen_scene_info.screen_probe_size_x, GetGlobalResource().m_lumen_scene_info.screen_probe_size_y, 1);
+
 }
 
 void CSimLumenFinalGather::BRDFPdfSH(ComputeContext& cptContext)
@@ -221,12 +269,14 @@ void CSimLumenFinalGather::BRDFPdfSH(ComputeContext& cptContext)
     cptContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(GetGlobalResource().m_brdf_pdf_sh, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.TransitionResource(GetGlobalResource().m_brdf_pdf_visualize, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    cptContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.FlushResourceBarriers();
 
     cptContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
     cptContext.SetConstantBuffer(1, GetGlobalResource().m_global_view_constant_buffer);
     cptContext.SetDynamicDescriptor(2, 0, g_GBufferB.GetSRV());
     cptContext.SetDynamicDescriptor(2, 1, g_SceneDepthBuffer.GetDepthSRV());
+    cptContext.SetDynamicDescriptor(2, 2, g_GBufferC.GetSRV());
     cptContext.SetDynamicDescriptor(3, 0, GetGlobalResource().m_brdf_pdf_sh.GetUAV());
     if (GetGlobalResource().m_visualize_type == 12)
     {
@@ -267,6 +317,7 @@ void CSimLumenFinalGather::SSProbeTraceMeshSDF(ComputeContext& cptContext)
     cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    cptContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     cptContext.TransitionResource(GetGlobalResource().m_ssprobe_type, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.TransitionResource(GetGlobalResource().m_sspace_trace_radiance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -283,6 +334,7 @@ void CSimLumenFinalGather::SSProbeTraceMeshSDF(ComputeContext& cptContext)
     cptContext.SetDynamicDescriptor(3, 4, GetGlobalResource().m_scene_card_infos_gpu.GetSRV());
     cptContext.SetDynamicDescriptor(3, 5, g_surface_cache_final.GetSRV());
     cptContext.SetDynamicDescriptor(3, 6, g_GBufferB.GetSRV());
+    cptContext.SetDynamicDescriptor(3, 7, g_GBufferC.GetSRV());
 
     cptContext.SetDynamicDescriptor(4, 0, GetGlobalResource().m_ssprobe_type.GetUAV());
     cptContext.SetDynamicDescriptor(4, 1, GetGlobalResource().m_sspace_trace_radiance.GetUAV());
@@ -300,6 +352,8 @@ void CSimLumenFinalGather::SSProbeTraceVoxel(ComputeContext& cptContext)
     cptContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(GetGlobalResource().m_struct_is_tex, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(GetGlobalResource().m_scene_voxel_lighting, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    cptContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    cptContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     cptContext.TransitionResource(GetGlobalResource().m_ssprobe_type, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.TransitionResource(GetGlobalResource().m_sspace_trace_radiance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -314,6 +368,7 @@ void CSimLumenFinalGather::SSProbeTraceVoxel(ComputeContext& cptContext)
     cptContext.SetDynamicDescriptor(3, 2, GetGlobalResource().m_scene_voxel_lighting.GetSRV());
     cptContext.SetDynamicDescriptor(3, 3, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
     cptContext.SetDynamicDescriptor(3, 4, g_GBufferB.GetSRV());
+    cptContext.SetDynamicDescriptor(3, 5, g_GBufferC.GetSRV());
 
     cptContext.SetDynamicDescriptor(4, 0, GetGlobalResource().m_ssprobe_type.GetUAV());
     cptContext.SetDynamicDescriptor(4, 1, GetGlobalResource().m_sspace_trace_radiance.GetUAV());

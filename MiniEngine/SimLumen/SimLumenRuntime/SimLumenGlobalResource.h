@@ -174,6 +174,8 @@ struct SSimLumenGlobalResource
 	// T/10 : visualize filtered radiosity
 	// Y/11 : visualize Filtered radiance
 	// U/12 : visualize brdf pdf
+	// I/13 : visualize screen space indirect lighting
+	// O/14 : disable light importance sampling
 	int m_visualize_type;
 };
 

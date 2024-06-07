@@ -68,6 +68,7 @@ void CSimLumenVisualization::Init()
 	InitSDFVisPSO();
 	InitSurfaceCachePSO();
 	InitVisVoxelLightingPSO();
+	InitVisFinalGatherPSO();
 }
 
 
@@ -93,6 +94,10 @@ void CSimLumenVisualization::Render(GraphicsContext& gfxContext)
 	else if (GetGlobalResource().m_visualize_type == 9)
 	{
 		VisualizeVoxelLighting(gfxContext);
+	}
+	else if (GetGlobalResource().m_visualize_type == 13)
+	{
+		VisualizeFinalGather(gfxContext);
 	}
 	//gfxContext.Finish();
 }
@@ -231,6 +236,27 @@ void CSimLumenVisualization::VisualizeVoxelLighting(GraphicsContext& gfxContext)
 
 void CSimLumenVisualization::VisualizeFinalGather(GraphicsContext& gfxContext)
 {
+	gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	gfxContext.ClearColor(g_SceneColorBuffer);
+	if (GetGlobalResource().m_visualize_type == 13)
+	{
+		gfxContext.TransitionResource(GetGlobalResource().m_sspace_final_radiance, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
+	gfxContext.FlushResourceBarriers();
+
+	gfxContext.SetRootSignature(m_vis_final_gather_sig);
+	gfxContext.SetPipelineState(m_vis_final_gather_pso);
+	gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV());
+	gfxContext.SetViewportAndScissor(0, 0, g_SceneColorBuffer.GetWidth(), g_SceneColorBuffer.GetHeight());
+
+	gfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	
+	if (GetGlobalResource().m_visualize_type == 13)
+	{
+		gfxContext.SetDynamicDescriptors(0, 0, 1, &GetGlobalResource().m_sspace_final_radiance.GetSRV());
+	}
+	
+	gfxContext.Draw(3);
 }
 
 void CSimLumenVisualization::InitSurfaceCachePSO()
@@ -383,6 +409,24 @@ void CSimLumenVisualization::InitVisVoxelLightingPSO()
 
 void CSimLumenVisualization::InitVisFinalGatherPSO()
 {
+	m_vis_final_gather_sig.Reset(1);
+	m_vis_final_gather_sig[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1, D3D12_SHADER_VISIBILITY_PIXEL);
+	m_vis_final_gather_sig.Finalize(L"m_vis_final_gather_sig");
+
+	std::shared_ptr<SCompiledShaderCode> p_vs_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenVisualizeFinalGather.hlsl", L"vs_main", L"vs_5_1", nullptr, 0);
+	std::shared_ptr<SCompiledShaderCode> p_ps_shader_code = GetGlobalResource().m_shader_compiler.Compile(L"Shaders/SimLumenVisualizeFinalGather.hlsl", L"ps_main", L"ps_5_1", nullptr, 0);
+
+	m_vis_final_gather_pso = GraphicsPSO(L"m_vis_final_gather_pso");
+	m_vis_final_gather_pso.SetRootSignature(m_vis_final_gather_sig);
+	m_vis_final_gather_pso.SetRasterizerState(RasterizerDefault);
+	m_vis_final_gather_pso.SetBlendState(BlendDisable);
+	m_vis_final_gather_pso.SetDepthStencilState(DepthStateDisabled);
+	m_vis_final_gather_pso.SetInputLayout(0, nullptr);
+	m_vis_final_gather_pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	m_vis_final_gather_pso.SetRenderTargetFormat(g_SceneColorBuffer.GetFormat(), DXGI_FORMAT_UNKNOWN);
+	m_vis_final_gather_pso.SetVertexShader(p_vs_shader_code->GetBufferPointer(), p_vs_shader_code->GetBufferSize());
+	m_vis_final_gather_pso.SetPixelShader(p_ps_shader_code->GetBufferPointer(), p_ps_shader_code->GetBufferSize());
+	m_vis_final_gather_pso.Finalize();
 }
 
 void CSimLumenVisualization::InitSDFVisBuffer()

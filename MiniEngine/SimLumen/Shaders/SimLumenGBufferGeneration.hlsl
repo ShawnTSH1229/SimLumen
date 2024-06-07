@@ -11,6 +11,7 @@ struct VSOutput
     float4 position : SV_POSITION;
     float3 normal : NORMAL;
     float2 uv : TEXCOORD0;
+    float3 world_pos : TEXCOORD1;
 };
 
 cbuffer SLumenMeshConstants : register(b0)
@@ -37,6 +38,7 @@ VSOutput vs_main(VSInput vsInput)
     vsOutput.position = mul(ViewProjMatrix, float4(worldPos, 1.0));
     vsOutput.normal = mul((float3x3)WorldMatrix, normal);
     vsOutput.uv = vsInput.uv;
+    vsOutput.world_pos = worldPos;
     return vsOutput;
 }
 
@@ -44,6 +46,7 @@ struct GBufferOutput
 {
     float4 GBufferA: SV_Target0;
     float4 GBufferB: SV_Target1;
+    float4 GBufferC: SV_Target2; //todo: fixme
 };
 
 Texture2D<float4> baseColorTexture          : register(t0);
@@ -59,5 +62,6 @@ GBufferOutput ps_main(VSOutput vsOutput)
     GBufferOutput output;
     output.GBufferA = float4(baseColor, 0.5);
     output.GBufferB = float4(normal * 0.5 + 0.5, 0.5);
+    output.GBufferC = float4(vsOutput.world_pos,0.0);
     return output;
 }

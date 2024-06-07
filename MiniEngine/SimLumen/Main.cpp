@@ -154,6 +154,8 @@ void SimLumen::Update( float deltaT )
     VIS_KEY_PRESS_NUM(u, 12);
     VIS_KEY_PRESS_NUM(i, 13);
     VIS_KEY_PRESS_NUM(o, 14);
+    VIS_KEY_PRESS_NUM(p, 15);
+    VIS_KEY_PRESS_NUM(g, 16);
 
     GetGlobalResource().m_lumen_scene_info.frame_num++;
 }
@@ -200,6 +202,7 @@ void SimLumen::UpdateConstantBuffer(GraphicsContext& cbUpdateContext)
     globals.PointLightWorldPos = DirectX::XMFLOAT3(-20, 32, -50);
     globals.PointLightRadius = 20.0f;
     globals.PreViewProjMatrix = pre_view_matrix;
+    globals.VisualizeType = GetGlobalResource().m_visualize_type;
     DynAlloc cb = cbUpdateContext.ReserveUploadMemory(sizeof(SLumenViewGlobalConstant));
     memcpy(cb.DataPtr, &globals, sizeof(SLumenViewGlobalConstant));
     GetGlobalResource().m_global_view_constant_buffer = cb.GpuAddress;
