@@ -88,7 +88,7 @@ void CSimLumenFinalGather::InitSSProbeTraceMeshSDFPso()
     m_ssprobe_trace_mesh_sdf_sig[0].InitAsConstantBuffer(0);
     m_ssprobe_trace_mesh_sdf_sig[1].InitAsConstantBuffer(1);
     m_ssprobe_trace_mesh_sdf_sig[2].InitAsConstantBuffer(2);
-    m_ssprobe_trace_mesh_sdf_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 6);
+    m_ssprobe_trace_mesh_sdf_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 7);
     m_ssprobe_trace_mesh_sdf_sig[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 2);
     m_ssprobe_trace_mesh_sdf_sig[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, 1);
     m_ssprobe_trace_mesh_sdf_sig.Finalize(L"m_ssprobe_trace_mesh_sdf_sig");
@@ -105,7 +105,7 @@ void CSimLumenFinalGather::InitSSProbeTraceVoxelPso()
     m_ssprobe_voxel_sig[0].InitAsConstantBuffer(0);
     m_ssprobe_voxel_sig[1].InitAsConstantBuffer(1);
     m_ssprobe_voxel_sig[2].InitAsConstantBuffer(2);
-    m_ssprobe_voxel_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 4);
+    m_ssprobe_voxel_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 5);
     m_ssprobe_voxel_sig[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 2);
     m_ssprobe_voxel_sig[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, 1);
     m_ssprobe_voxel_sig.Finalize(L"m_ssprobe_voxel_sig");
@@ -266,6 +266,7 @@ void CSimLumenFinalGather::SSProbeTraceMeshSDF(ComputeContext& cptContext)
     cptContext.TransitionResource(GetGlobalResource().m_scene_sdf_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(GetGlobalResource().m_scene_card_infos_gpu, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(g_surface_cache_final, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    cptContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     cptContext.TransitionResource(GetGlobalResource().m_ssprobe_type, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.TransitionResource(GetGlobalResource().m_sspace_trace_radiance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -281,6 +282,7 @@ void CSimLumenFinalGather::SSProbeTraceMeshSDF(ComputeContext& cptContext)
     cptContext.SetDynamicDescriptor(3, 3, GetGlobalResource().m_scene_mesh_sdf_brick_texture.GetSRV());
     cptContext.SetDynamicDescriptor(3, 4, GetGlobalResource().m_scene_card_infos_gpu.GetSRV());
     cptContext.SetDynamicDescriptor(3, 5, g_surface_cache_final.GetSRV());
+    cptContext.SetDynamicDescriptor(3, 6, g_GBufferB.GetSRV());
 
     cptContext.SetDynamicDescriptor(4, 0, GetGlobalResource().m_ssprobe_type.GetUAV());
     cptContext.SetDynamicDescriptor(4, 1, GetGlobalResource().m_sspace_trace_radiance.GetUAV());
@@ -311,6 +313,7 @@ void CSimLumenFinalGather::SSProbeTraceVoxel(ComputeContext& cptContext)
     cptContext.SetDynamicDescriptor(3, 1, GetGlobalResource().m_struct_is_tex.GetSRV());
     cptContext.SetDynamicDescriptor(3, 2, GetGlobalResource().m_scene_voxel_lighting.GetSRV());
     cptContext.SetDynamicDescriptor(3, 3, GetGlobalResource().m_global_sdf_brick_texture.GetSRV());
+    cptContext.SetDynamicDescriptor(3, 4, g_GBufferB.GetSRV());
 
     cptContext.SetDynamicDescriptor(4, 0, GetGlobalResource().m_ssprobe_type.GetUAV());
     cptContext.SetDynamicDescriptor(4, 1, GetGlobalResource().m_sspace_trace_radiance.GetUAV());

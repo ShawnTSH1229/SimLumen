@@ -20,6 +20,7 @@ Texture2D<float> gbuffer_depth      : register(t0);
 Texture2D<uint> structed_is_indirect_table: register(t1);
 StructuredBuffer<SVoxelLighting> scene_voxel_lighting: register(t2);
 Texture3D<float> global_sdf_texture: register(t3);
+Texture2D<float4> gbuffer_b                             : register(t4);
 
 RWTexture2D<uint> screen_space_probe_type : register(u0);
 RWTexture2D<float3> screen_space_radiance : register(u1);
@@ -45,20 +46,22 @@ void ScreenProbeTraceVoxelCS(uint3 group_idx : SV_GroupID, uint3 group_thread_id
 
        float3 probe_world_position = GetWorldPosByDepth(probe_depth, piexl_tex_uv);
        float probe_view_dist = length(probe_world_position - CameraPos);
-       if(probe_view_dist > 100.0f)
+       if(probe_view_dist > 200.0f)
        {    
             float3 ray_direction;
             GetScreenProbeTexelRay(dispatch_thread_idx.xy, ray_direction);
 
+            float3 world_normal = gbuffer_b.Load(int3(ss_probe_atlas_pos.xy,0)).xyz * 2.0 - 1.0;
+
             SGloablSDFHitResult hit_result = (SGloablSDFHitResult)0;
-            TraceGlobalSDF(probe_world_position + ray_direction * gloabl_sdf_voxel_size * 2.0, ray_direction, hit_result);
+            TraceGlobalSDF(probe_world_position + world_normal * gloabl_sdf_voxel_size * 3.0, ray_direction, hit_result);
 
             int x_dir = 0;
             if(ray_direction.x > 0.0) { x_dir = 5;  }
             else { x_dir = 4;  }
 
             int y_dir = 0;
-            if(ray_direction.y > 0.0) { y_dir = 2;  }
+            if(ray_direction.y > 0.0) { y_dir = 3;  }
             else { y_dir = 2;  }
 
             int z_dir = 0;
@@ -73,7 +76,7 @@ void ScreenProbeTraceVoxelCS(uint3 group_idx : SV_GroupID, uint3 group_thread_id
                 float3 hit_world_position = 
                  ray_direction * (hit_result.hit_distance - gloabl_sdf_voxel_size) + 
                  probe_world_position  + 
-                 ray_direction * gloabl_sdf_voxel_size * 2.0;
+                 world_normal * gloabl_sdf_voxel_size * 3.0;
 
                 uint voxel_index_1d = GetVoxelIndexFromWorldPos(hit_world_position);
 

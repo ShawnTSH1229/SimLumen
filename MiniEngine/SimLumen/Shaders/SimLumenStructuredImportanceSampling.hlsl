@@ -115,7 +115,7 @@ void StructuredImportanceSamplingCS(uint3 group_idx : SV_GroupID, uint3 group_th
             uint2 ray_tex_coord_to_merge;
 			uint ray_level_to_merge;
 			float ray_pdf_to_merge;
-			UnpackRaySortInfo(RaysToRefine[sort_offset + ray_idx_to_refine], ray_tex_coord_to_merge, ray_level_to_merge, ray_pdf_to_merge);
+			UnpackRaySortInfo(RaysToRefine[sort_offset + ray_idx_to_merge], ray_tex_coord_to_merge, ray_level_to_merge, ray_pdf_to_merge);
 
             if(ray_pdf_to_merge < MIN_PDF_TRACE)
             {
@@ -153,7 +153,6 @@ void StructuredImportanceSamplingCS(uint3 group_idx : SV_GroupID, uint3 group_th
 		float write_ray_pdf;
 		UnpackRaySortInfo(RaysToRefine[sort_offset + thread_idx], write_ray_tex_coord, write_ray_level, write_ray_pdf);
 
-        uint2 write_ray_coord = uint2(thread_idx % PROBE_SIZE_2D, thread_idx / PROBE_SIZE_2D);
         is_result = PackRayInfo(write_ray_tex_coord,write_ray_level);
     }
     rwstructed_is_indirect_table[dispatch_thread_idx.xy] = is_result;
