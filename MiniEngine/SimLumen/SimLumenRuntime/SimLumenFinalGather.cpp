@@ -193,7 +193,7 @@ void CSimLumenFinalGather::Rendering(ComputeContext& cptContext)
     static bool is_first_frame = true;
     // importance sampling
     BRDFPdfSH(cptContext);
-    if (is_first_frame || (GetGlobalResource().m_visualize_type == 15))
+    if (is_first_frame || (GetGlobalResource().m_disable_lighd_is == true))
     {
         LightingPdfSH(cptContext);
     }

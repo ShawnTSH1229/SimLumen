@@ -157,6 +157,10 @@ void SimLumen::Update( float deltaT )
     VIS_KEY_PRESS_NUM(p, 15);
     VIS_KEY_PRESS_NUM(g, 16);
 
+    if (GameInput::IsFirstPressed(GameInput::kKey_m))
+    {
+        GetGlobalResource().m_disable_lighd_is = !GetGlobalResource().m_disable_lighd_is;
+    }
     GetGlobalResource().m_lumen_scene_info.frame_num++;
 }
 
