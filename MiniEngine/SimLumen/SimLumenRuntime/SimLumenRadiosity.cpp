@@ -166,6 +166,8 @@ void CSimLumenRadiosity::RadiosityTrace(ComputeContext& cptContext)
 		cptContext.TransitionResource(g_radiosity_probe_sh_green_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cptContext.TransitionResource(g_radiosity_probe_sh_blue_atlas, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
+		cptContext.TransitionResource(g_surface_cache_indirect, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
 		cptContext.FlushResourceBarriers();
 	
 		cptContext.SetDynamicConstantBufferView(0, sizeof(SLumenSceneInfo), &GetGlobalResource().m_lumen_scene_info);
@@ -183,6 +185,8 @@ void CSimLumenRadiosity::RadiosityTrace(ComputeContext& cptContext)
 		cptContext.SetDynamicDescriptor(2, 0, g_surface_cache_indirect.GetUAV());
 	
 		cptContext.Dispatch(2048 / 16, 128 * 5 / 16, 1);
+		cptContext.TransitionResource(g_surface_cache_indirect, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 		//integrate_sh = false;
 	}
 

@@ -23,10 +23,9 @@ Texture3D<float> distance_field_brick_tex               : register(t3);
 StructuredBuffer<SCardInfo> scene_card_infos            : register(t4);
 Texture2D<float4>  surface_cache_final_lighting         : register(t5);
 Texture2D<float4> gbuffer_b                             : register(t6);
-Texture2D<float4> gbuffer_c                              : register(t7);//todo: fix me
+Texture2D<float4> gbuffer_c                             : register(t7);//todo: fix me
 
-RWTexture2D<uint> screen_space_probe_type : register(u0);
-RWTexture2D<float3> screen_space_radiance : register(u1);
+RWTexture2D<float4> screen_space_radiance : register(u0);
 
 SamplerState g_sampler_point_3d : register(s0);
 
@@ -38,17 +37,15 @@ void ScreenProbeTraceMeshSDFsCS(uint3 group_idx : SV_GroupID, uint3 group_thread
 {
     uint2 ss_probe_idx_xy = group_idx.xy;
     uint2 ss_probe_atlas_pos = ss_probe_idx_xy * PROBE_SIZE_2D + PROBE_SIZE_2D / 2;
+    
     float probe_depth = gbuffer_depth.Load(int3(ss_probe_atlas_pos.xy,0));
+    float3 probe_world_position = gbuffer_c.Load(int3(dispatch_thread_idx.xy,0)).xyz;
+    float probe_view_dist = length(probe_world_position - CameraPos);
 
     float3 trace_radiance = float3(0,0,0);
     if(probe_depth != 0.0)
     {
-       const float2 global_thread_size = float2(is_pdf_thread_size_x,is_pdf_thread_size_x);
-       float2 probe_tex_uv = float2(ss_probe_atlas_pos.xy) / global_thread_size;
-
-       float3 probe_world_position = gbuffer_c.Load(int3(dispatch_thread_idx.xy,0)).xyz;
-
-       float probe_view_dist = length(probe_world_position - CameraPos);
+       
        if(probe_view_dist < 1000.0f) //debug
        {
             float3 ray_direction;
@@ -112,13 +109,9 @@ void ScreenProbeTraceMeshSDFsCS(uint3 group_idx : SV_GroupID, uint3 group_thread
             {
                 trace_radiance = float3(0.1,0.1,0.1); //hack sky light
             }
-            screen_space_probe_type[dispatch_thread_idx.xy] = 1;
        }
     }
-    else
-    {
-        screen_space_probe_type[dispatch_thread_idx.xy] = 0;
-    }
-    screen_space_radiance[dispatch_thread_idx.xy] = trace_radiance;
+    
+    screen_space_radiance[dispatch_thread_idx.xy] = float4(trace_radiance,1.0);
 
 }

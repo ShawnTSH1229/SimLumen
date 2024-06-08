@@ -95,7 +95,7 @@ void SimLumen::Startup( void )
     }
     m_MeshBuilder.Destroy();
 
-    m_Camera.SetEyeAtUp(Vector3(0, 50, 50), Vector3(kZero), Vector3(kYUnitVector));
+    m_Camera.SetEyeAtUp(Vector3(0, 50, 100), Vector3(kZero), Vector3(kYUnitVector));
     m_Camera.SetZRange(1.0f, 10000.0f);
     m_CameraController.reset(new FlyingFPSCamera(m_Camera, Vector3(kYUnitVector)));
     m_card_capturer.Init();

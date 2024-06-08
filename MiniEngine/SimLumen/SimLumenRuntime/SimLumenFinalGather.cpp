@@ -106,7 +106,7 @@ void CSimLumenFinalGather::InitSSProbeTraceMeshSDFPso()
     m_ssprobe_trace_mesh_sdf_sig[1].InitAsConstantBuffer(1);
     m_ssprobe_trace_mesh_sdf_sig[2].InitAsConstantBuffer(2);
     m_ssprobe_trace_mesh_sdf_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 8);
-    m_ssprobe_trace_mesh_sdf_sig[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 2);
+    m_ssprobe_trace_mesh_sdf_sig[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
     m_ssprobe_trace_mesh_sdf_sig[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, 1);
     m_ssprobe_trace_mesh_sdf_sig.Finalize(L"m_ssprobe_trace_mesh_sdf_sig");
 
@@ -123,7 +123,7 @@ void CSimLumenFinalGather::InitSSProbeTraceVoxelPso()
     m_ssprobe_voxel_sig[1].InitAsConstantBuffer(1);
     m_ssprobe_voxel_sig[2].InitAsConstantBuffer(2);
     m_ssprobe_voxel_sig[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 6);
-    m_ssprobe_voxel_sig[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 2);
+    m_ssprobe_voxel_sig[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
     m_ssprobe_voxel_sig[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, 1);
     m_ssprobe_voxel_sig.Finalize(L"m_ssprobe_voxel_sig");
 
@@ -191,8 +191,8 @@ void CSimLumenFinalGather::InitSSProbeIntegratePso()
 void CSimLumenFinalGather::Rendering(ComputeContext& cptContext)
 {
     static bool is_first_frame = true;
-    // importance sampling
     BRDFPdfSH(cptContext);
+    // importance sampling
     if (is_first_frame || (GetGlobalResource().m_disable_lighd_is == true))
     {
         LightingPdfSH(cptContext);
@@ -226,6 +226,7 @@ void CSimLumenFinalGather::LightingPdfSH(ComputeContext& cptContext)
     cptContext.SetDynamicDescriptor(0, 0, g_SceneDepthBuffer.GetDepthSRV());
     cptContext.SetDynamicDescriptor(1, 0, GetGlobalResource().g_is_lighting_pdf_buffer.GetUAV());
     cptContext.Dispatch(GetGlobalResource().m_lumen_scene_info.screen_probe_size_x, GetGlobalResource().m_lumen_scene_info.screen_probe_size_y, 1);
+    cptContext.InsertUAVBarrier(GetGlobalResource().g_is_lighting_pdf_buffer, true);//todo: fixme
 }
 
 void CSimLumenFinalGather::LightingHistPdfSH(ComputeContext& cptContext)
@@ -246,7 +247,6 @@ void CSimLumenFinalGather::LightingHistPdfSH(ComputeContext& cptContext)
     cptContext.SetDynamicDescriptor(2, 2, GetGlobalResource().m_sspace_radiance.GetSRV());
     cptContext.SetDynamicDescriptor(3, 0, GetGlobalResource().g_is_lighting_pdf_buffer.GetUAV());
     cptContext.Dispatch(GetGlobalResource().m_lumen_scene_info.screen_probe_size_x, GetGlobalResource().m_lumen_scene_info.screen_probe_size_y, 1);
-
 }
 
 void CSimLumenFinalGather::BRDFPdfSH(ComputeContext& cptContext)
@@ -268,7 +268,11 @@ void CSimLumenFinalGather::BRDFPdfSH(ComputeContext& cptContext)
     cptContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(GetGlobalResource().m_brdf_pdf_sh, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    cptContext.TransitionResource(GetGlobalResource().m_brdf_pdf_visualize, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    if (GetGlobalResource().m_visualize_type == 12)
+    {
+        cptContext.TransitionResource(GetGlobalResource().m_brdf_pdf_visualize, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    }
+    
     cptContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.FlushResourceBarriers();
 
@@ -319,7 +323,6 @@ void CSimLumenFinalGather::SSProbeTraceMeshSDF(ComputeContext& cptContext)
     cptContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-    cptContext.TransitionResource(GetGlobalResource().m_ssprobe_type, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.TransitionResource(GetGlobalResource().m_sspace_trace_radiance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.FlushResourceBarriers();
 
@@ -336,12 +339,13 @@ void CSimLumenFinalGather::SSProbeTraceMeshSDF(ComputeContext& cptContext)
     cptContext.SetDynamicDescriptor(3, 6, g_GBufferB.GetSRV());
     cptContext.SetDynamicDescriptor(3, 7, g_GBufferC.GetSRV());
 
-    cptContext.SetDynamicDescriptor(4, 0, GetGlobalResource().m_ssprobe_type.GetUAV());
-    cptContext.SetDynamicDescriptor(4, 1, GetGlobalResource().m_sspace_trace_radiance.GetUAV());
+    cptContext.SetDynamicDescriptor(4, 0, GetGlobalResource().m_sspace_trace_radiance.GetUAV());
 
     cptContext.SetDynamicSampler(5, 0, SamplerPointClamp);
 
     cptContext.Dispatch(GetGlobalResource().m_lumen_scene_info.screen_probe_size_x, GetGlobalResource().m_lumen_scene_info.screen_probe_size_y, 1);
+    
+    cptContext.InsertUAVBarrier(GetGlobalResource().m_sspace_trace_radiance,true);
 }
 
 void CSimLumenFinalGather::SSProbeTraceVoxel(ComputeContext& cptContext)
@@ -355,7 +359,6 @@ void CSimLumenFinalGather::SSProbeTraceVoxel(ComputeContext& cptContext)
     cptContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     cptContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-    cptContext.TransitionResource(GetGlobalResource().m_ssprobe_type, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.TransitionResource(GetGlobalResource().m_sspace_trace_radiance, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cptContext.FlushResourceBarriers();
 
@@ -370,8 +373,7 @@ void CSimLumenFinalGather::SSProbeTraceVoxel(ComputeContext& cptContext)
     cptContext.SetDynamicDescriptor(3, 4, g_GBufferB.GetSRV());
     cptContext.SetDynamicDescriptor(3, 5, g_GBufferC.GetSRV());
 
-    cptContext.SetDynamicDescriptor(4, 0, GetGlobalResource().m_ssprobe_type.GetUAV());
-    cptContext.SetDynamicDescriptor(4, 1, GetGlobalResource().m_sspace_trace_radiance.GetUAV());
+    cptContext.SetDynamicDescriptor(4, 0, GetGlobalResource().m_sspace_trace_radiance.GetUAV());
 
     cptContext.SetDynamicSampler(5, 0, SamplerPointClamp);
 

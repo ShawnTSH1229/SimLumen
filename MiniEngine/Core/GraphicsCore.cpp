@@ -183,6 +183,9 @@ void Graphics::Initialize(bool RequireDXRSupport)
 
             uint32_t useGPUBasedValidation = 0;
             CommandLineArgs::GetInteger(L"gpu_debug", useGPUBasedValidation);
+#if _DEBUG
+            //useGPUBasedValidation = 1;
+#endif
             if (useGPUBasedValidation)
             {
                 Microsoft::WRL::ComPtr<ID3D12Debug1> debugInterface1;
