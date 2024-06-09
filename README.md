@@ -49,26 +49,43 @@ We finally obtained the final indirect lighting by integrating the probes around
 ## SimLumenBuilder
 
 Offline SDF and mesh card builder, located at MiniEngine\SimLumen\SimLumenMeshBuilder
+
 SimLumenMeshBuilder.cpp : Build the mesh cards
+
 SimLumenMeshSDFBuilder.cpp : Build the mesh SDFs and global SDF
+
 
 ## SimLumenRuntime
 located at MiniEngine\SimLumen\SimLumenRuntime
 
 SimLumenCardCapture.cpp : Capture the mesh cards and copy the result into global surface cache atlas
+
 SimLumenGBufferGeneration.cpp: Generate the GBuffer
+
 SimLumenSurfaceCache.cpp : Surface cache direct lighting, combine lighting and lighting injection.
+
 SimLumenVoxelScene.cpp : Voxelized the scene and update the voxel visibility buffer
+
 SimLumenRadiosity.cpp : Surface cache indirect lighting, including radiosity trace, radiosity filter, convert to SH and integrate SH.
+
 SimLumenFinalGather.cpp : Final Gather, include:
+
 BRDF importance sampling PDF generation, 
+
 lighting importance sampling PDF generation,
+
 structured importance sampling,
+
 screen space probe mesh sdf trace,
+
 screen space probe voxel trace,
+
 screen probe radiance composite,
+
 screen probe radiance filter,
+
 screen probe radiance convert to octchedron form,
+
 integrate
 
 ## SimLumen Shaders
