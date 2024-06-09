@@ -66,7 +66,13 @@ SimLumenSurfaceCache.cpp : Surface cache direct lighting, combine lighting and l
 
 SimLumenVoxelScene.cpp : Voxelized the scene and update the voxel visibility buffer
 
-SimLumenRadiosity.cpp : Surface cache indirect lighting, including radiosity trace, radiosity filter, convert to SH and integrate SH.
+SimLumenRadiosity.cpp : Surface cache indirect lighting, include:
+
+radiosity trace, 
+
+radiosity filter, 
+
+convert to SH and integrate SH.
 
 SimLumenFinalGather.cpp : Final Gather, include:
 
@@ -93,4 +99,138 @@ located at MiniEngine\SimLumen\Shaders
 
 <p align="left">
     <img src="/Resources/source_tree_shader.png" width="30%" height="30%">
+</p>
+
+# Visualization
+
+Key 1: visualize mesh SDFs normal
+
+Key 2: visualize global SDFs normal
+
+Key 3: visualize sruface cache albedo
+
+Key 4: visualize surface cache normal
+
+Key 5: visualize surface cache direct lighting
+
+Key 6: visualize surface cache indirect lighting
+
+Key 7: visualize surface cache final lighting
+
+Key 8: visualize radiosity trace result
+
+Key 9: visualize voxel lighting
+
+Key I: visualize screen space indirect lighting
+
+# Screenshot
+
+visualize mesh sdf normal:
+
+<p align="left">
+    <img src="/Resources/sdf_normal_visualize.png" width="60%" height="60%">
+</p>
+
+visualize surface cache albedo:
+
+<p align="left">
+    <img src="/Resources/scene_attributes_alebedo.png" width="60%" height="60%">
+</p>
+
+visualize surface cache normal:
+
+<p align="left">
+    <img src="/Resources/scene_attributes_normal.png" width="60%" height="60%">
+</p>
+
+visualize surface cache direct lighting:
+
+<p align="left">
+    <img src="/Resources/scache_direct_lighting.png" width="60%" height="60%">
+</p>
+
+visualize scene voxel lighting:
+
+<p align="left">
+    <img src="/Resources/voxel_lighting_visualize.png" width="60%" height="60%">
+</p>
+
+visualize radiosity trace result:
+
+<p align="left">
+    <img src="/Resources/scache_radiosity_vis.png" width="60%" height="60%">
+</p>
+
+visualize surface cache indirect lighting:
+
+<p align="left">
+    <img src="/Resources/indirect_lighting_vis.png" width="60%" height="60%">
+</p>
+
+visualize surface cache final lighting:
+
+<p align="left">
+    <img src="/Resources/combined_lighting_vis.png" width="60%" height="60%">
+</p>
+
+visualize screen probe brdf pdf:
+
+<p align="left">
+    <img src="/Resources/brdf_pdf_vis.png" width="60%" height="60%">
+</p>
+
+visualize screen probe lighting pdf:
+
+<p align="left">
+    <img src="/Resources/lighting_is_pdf_vis.png" width="60%" height="60%">
+</p>
+
+visualize screen probe mesh sdf trace result:
+
+<p align="left">
+    <img src="/Resources/mesh_sdf_trace_result.png" width="60%" height="60%">
+</p>
+
+visualize screen probe voxel trace result:
+
+<p align="left">
+    <img src="/Resources/voxel_trace_result.png" width="60%" height="60%">
+</p>
+
+visualize screen probe radiance composite result:
+
+<p align="left">
+    <img src="/Resources/composited_result.png" width="60%" height="60%">
+</p>
+
+visualize screen probe radiance filter result:
+
+<p align="left">
+    <img src="/Resources/filtered_radiance.png" width="60%" height="60%">
+</p>
+
+
+visualize screen probe radiance convert to oct form result:
+
+<p align="left">
+    <img src="/Resources/oct_result.png" width="60%" height="60%">
+</p>
+
+visualize screen probe indirect lighting result:
+
+<p align="left">
+    <img src="/Resources/screen_indirect_lighting_result.png" width="60%" height="60%">
+</p>
+
+
+direct lighting only:
+
+<p align="left">
+    <img src="/Resources/direct_lighting_only.png" width="60%" height="60%">
+</p>
+
+with GI:
+
+<p align="left">
+    <img src="/Resources/with_gi.png" width="60%" height="60%">
 </p>
