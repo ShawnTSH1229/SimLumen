@@ -5,6 +5,8 @@ Simplified Unreal Lumen Implementation in MiniEngine
     <img src="/Resources/logo.png" width="60%" height="60%">
 </p>
 
+[<u>**SimLumen Development Blog**</u>](https://shawntsh1229.github.io/2024/05/18/Simplified-Lumen-GI-In-MiniEngine/)
+
 # Introduction
 
 This is a simplified Unreal Lumen GI implementation (**SimLumen**) based on **Unreal's Lumen GI**. We have implemented **most** of Unreal Lumen's features.
@@ -15,7 +17,7 @@ SimLumen builds **mesh cards** offline in order to capture **material attributes
 
 The surface cache describes the **lighting of the scene**. It contains 5 parts: **surface cache material attributes**, **surface cache direct lighting**, **surface cache indirect lighting**, **surface cache combined final lighting** and **voxelized scene lighting**.
 
-With the global surface cache material attributes (normal, albedo and depth), SimLumen computes the direct lighting for each pixel in the surface cache atlas.
+With the global surface cache material attributes (normal, albedo and depth), SimLumen computes the **direct lighting** for each pixel in the surface cache atlas.
 
 What's more, we have implemented **infinity** bounce lighting similar to Unreal Lumen. At first, we **voxelize** the scene. Each voxel has 6 directions. For each direction, we perform a mesh SDF trace and store the **hit mesh index and hit distance** in the **voxel visibility buffer**. Then, we **inject** the surface cache final lighting into the voxel if the voxel hit a mesh.
 
@@ -38,8 +40,12 @@ We finally obtained the final indirect lighting by integrating the probes around
 
 1.Cloning the repository with `git clone https://github.com/ShawnTSH1229/SimLumen.git`.
 
-2.Decompress the zip file: MiniEngine\SimLumen\Assets\erato.zip
+2.Decompress the file: MiniEngine\SimLumen\Assets\erato.rar
 
 2.Compile and run the visual studio solution located in `SimLumen\MiniEngine\SimLumen\SimLumen.sln`
 
 # Source Tree
+
+<p align="left">
+    <img src="/Resource/source_tree_shader.png" width="60%" height="60%">
+</p>
