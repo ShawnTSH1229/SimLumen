@@ -51,7 +51,6 @@ void ScreenProbeCompositeCS(uint3 group_idx : SV_GroupID, uint3 group_thread_idx
             uint2 remaped_texel_coord = texel_coord * PROBE_SIZE_2D / mip_size;
             uint remapped_thread_idx = remaped_texel_coord.y * PROBE_SIZE_2D + remaped_texel_coord.x;
 
-
             uint3 quantized_lighting = lighting * lighting_quantize_scale;
 
             InterlockedAdd(shared_accumulator[remapped_thread_idx][0], quantized_lighting.x);
