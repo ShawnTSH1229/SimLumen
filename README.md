@@ -47,5 +47,5 @@ We finally obtained the final indirect lighting by integrating the probes around
 # Source Tree
 
 <p align="left">
-    <img src="/Resources/source_tree_shader.png" width="60%" height="60%">
+    <img src="/Resources/source_tree_shader.png" width="30%" height="30%">
 </p>
